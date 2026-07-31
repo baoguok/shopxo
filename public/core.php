@@ -132,20 +132,22 @@ define('ROOT', substr(ROOT_PATH, 0, -7));
 // 定义应用目录
 define('APP_PATH', ROOT.'app'.DS);
 
-// 防止独立入口文件已定义，系统类型 [default] 默认default、可根据终端区分系统类型
-if(!defined('SYSTEM_TYPE'))
+// 系统类型 [default] 默认default、可根据终端区分系统类型
+$system_type = (empty($_REQUEST['system_type']) || !is_string($_REQUEST['system_type'])) ? 'default' : trim($_REQUEST['system_type']);
+if($system_type === '' || preg_match('/^[a-zA-Z0-9_-]+$/', $system_type) !== 1)
 {
-    define('SYSTEM_TYPE', empty($_REQUEST['system_type']) ? 'default' : trim($_REQUEST['system_type']));
+    $system_type = 'default';
 }
+define('SYSTEM_TYPE', $system_type);
 
 // 请求应用 [web, app] 默认web(ios|android|小程序 均为app)
-define('APPLICATION', empty($_REQUEST['application']) ? 'web' : trim($_REQUEST['application']));
+define('APPLICATION', empty($_REQUEST['application']) ? 'web' : trim(htmlspecialchars($_REQUEST['application'])));
 
 // 请求客户端 [pc, h5, ios, android, alipay, weixin, baidu, toutiao, qq, kuaishou] 默认pc(目前系统为自适应,h5需自行校验)
-define('APPLICATION_CLIENT_TYPE', empty($_REQUEST['application_client_type']) ? 'pc' : trim($_REQUEST['application_client_type']));
+define('APPLICATION_CLIENT_TYPE', empty($_REQUEST['application_client_type']) ? 'pc' : trim(htmlspecialchars($_REQUEST['application_client_type'])));
 
 // 请求客户端手机品牌（调试模式为 devtools）
-define('APPLICATION_CLIENT_BRAND', empty($_REQUEST['application_client_brand']) ? '' : trim($_REQUEST['application_client_brand']));
+define('APPLICATION_CLIENT_BRAND', empty($_REQUEST['application_client_brand']) ? '' : trim(htmlspecialchars($_REQUEST['application_client_brand'])));
 
 // 是否get
 define('IS_GET', isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] == 'GET');
