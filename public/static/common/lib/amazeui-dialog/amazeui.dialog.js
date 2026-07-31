@@ -211,7 +211,13 @@ dialog.popup = function(options) {
   }
   html.push('</div> ');
   html.push('</div>');
-  var $popup = $(html.join('')).appendTo('body').modal();
+  // 是否允许点击遮罩关闭（默认允许，传 false/0 则禁止）
+  var modal_config = {};
+  if(options.closeViaDimmer !== undefined)
+  {
+    modal_config.closeViaDimmer = options.closeViaDimmer;
+  }
+  var $popup = $(html.join('')).appendTo('body').modal(modal_config);
   $popup.on('opened.modal.amui', function() {
     options.onOpen();
   });

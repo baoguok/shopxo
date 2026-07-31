@@ -5,6 +5,11 @@
     font-size: 1.6rem;
     display: inline;
 }
+#buy-items-payment .business-list-nbfc ul {
+    width: calc(100% + 4rem);
+    margin-left: -2rem;
+    margin-top: -1rem;
+}
 .buy-items > .goods-group-list > .am-panel > .am-panel-bd > table > thead > tr > th,
 .buy-items > .goods-group-list > .am-panel > .am-panel-bd > table > tbody > tr > td {
     border: 0;
@@ -172,12 +177,6 @@ ul.address-list li .user-base .address-detail .user {
     padding: 1rem;
     outline: none;
     border-radius: 0.4rem;
-}
-@media only screen and (max-width: 1024px) {
-    .buy-message,
-    .buy-nav-footer {
-        padding: 0 0.5rem;
-    }
 }
 
 /*合计*/

@@ -121,7 +121,7 @@ class DiyService
         $id = empty($params['diy_id']) ? (empty($params['id']) ? 0 : intval($params['id'])) : intval($params['diy_id']);
         if(!empty($params['id']))
         {
-            $ret = self::DiyList([
+            $ret = self::DiyList(array_merge($params, [
                 'n'      => 1,
                 'field'  => 'id,config',
                 'where'  => [
@@ -131,10 +131,29 @@ class DiyService
                 'is_config_handle'       => 1,
                 'is_config_data_handle'  => 1,
                 'is_view'                => 1,
-            ]);
+            ]));
             $data = (empty($ret['data']) || empty($ret['data'][0])) ? null : $ret['data'][0];
         }
         return $data;
+    }
+
+    /**
+     * diy配置是否包含动态参数变量
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [int]             $diy_id [diy id]
+     */
+    public static function DiyConfigHasDynamicParams($diy_id = 0)
+    {
+        if(empty($diy_id))
+        {
+            return false;
+        }
+        $config = Db::name('Diy')->where(['id'=>intval($diy_id)])->value('config');
+        return DiyModule::ConfigHasDynamicParams($config);
     }
 
     /**

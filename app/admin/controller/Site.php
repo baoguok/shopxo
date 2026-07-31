@@ -228,6 +228,7 @@ class Site extends Base
             'common_multilingual_list'                   => MyConst('common_multilingual_list'),
             // 商品分类
             'common_show_goods_category_level_list'      => MyConst('common_show_goods_category_level_list'),
+            'common_goods_category_model_icon_type_list' => MyConst('common_goods_category_model_icon_type_list'),
             // 商品基础字段对
             'common_goods_base_fields_list'              => MyConst('common_goods_base_fields_list'),
             // 主导航
@@ -295,6 +296,8 @@ class Site extends Base
             // 用户登录
             case 'login' :
                 $field_list[] = 'home_user_login_type';
+                $field_list[] = 'home_user_login_img_verify_state';
+                $field_list[] = 'home_user_login_verify_auto_register';
                 $field_list[] = 'home_site_user_login_ad1_images';
                 $field_list[] = 'home_site_user_login_ad2_images';
                 $field_list[] = 'home_site_user_login_ad3_images';

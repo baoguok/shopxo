@@ -24,6 +24,11 @@
                 'is_show'  => in_array($data['order_model'], [0,1,2]) ? 1 : 0,
             ],
             [
+                'name'     => MyLang('order.detail_take_info_title'),
+                'key'      => 'order-detail-take-info',
+                'is_show'  => ($data['order_model'] == 2 && !empty($data['extraction_data'])) ? 1 : 0,
+            ],
+            [
                 'name'     => MyLang('order.detail_service_title'),
                 'key'      => 'order-detail-service',
                 'is_show'  => $data['order_model'] == 1 ? 1 : 0,
@@ -158,22 +163,6 @@
                                 {{/if}}
                             {{/if}}
                         </div>
-                        <!-- 取货码 -->
-                        {{if !empty($data['extraction_data'])}}
-                            {{if !empty($data['extraction_data']['images'])}}
-                                <p class="am-margin-bottom-xs">
-                                    <img class="am-img-thumbnail am-radius am-block common-annex-view-event" src="{{$data.extraction_data.images}}" width="105" height="105" data-is-download="1" />
-                                </p>
-                            {{/if}}
-                            <p>
-                                <span>{{:MyLang('order.form_item_take')}}：</span>
-                                {{if empty($data['extraction_data']['code'])}}
-                                    <span class="am-text-danger">{{:MyLang('no_data')}}</span>
-                                {{else /}}
-                                    <span class="am-badge am-badge-success am-radius am-margin-0 text-copy-submit">{{$data.extraction_data.code}}</span>
-                                {{/if}}
-                            </p>
-                        {{/if}}
                     {{else /}}
                         <!-- 收货地址 -->
                         <p>
@@ -233,6 +222,86 @@
                                 </div>
                             </div>
                         {{/if}}
+                    {{/if}}
+                {{else /}}
+                    {{:ModuleInclude('public/not_data')}}
+                {{/if}}
+            </div>
+        </div>
+
+        <!-- 自提订单 - 取货信息 -->
+        <div class="item" data-key="order-detail-take-info">
+            <div class="am-padding-sm">
+                {{if !empty($data['extraction_data'])}}
+                    {{if !empty($data['extraction_data']['items']) and is_array($data['extraction_data']['items'])}}
+                        <div class="extraction-take-switch" data-index="0" data-count="{{:count($data['extraction_data']['items'])}}">
+                            <a href="javascript:;" class="extraction-take-arrow extraction-take-prev am-icon-angle-left"></a>
+                            <div class="extraction-take-body">
+                                {{foreach $data.extraction_data.items as $ek=>$ev}}
+                                    <div class="extraction-take-item {{if $ek eq 0}}am-active{{/if}}" data-index="{{$ek}}" {{if $ek neq 0}}style="display:none;"{{/if}}>
+                                        {{if !empty($ev['goods_url'])}}
+                                            <a href="{{$ev.goods_url}}" target="_blank" rel="noopener noreferrer" class="extraction-take-goods">
+                                                {{if !empty($ev['goods_images'])}}
+                                                    <img class="am-img-thumbnail am-radius" src="{{$ev.goods_images}}" width="45" height="45" alt="{{$ev.goods_title}}" />
+                                                {{/if}}
+                                                <span class="extraction-take-goods-title am-text-sm am-text-truncate-2">{{$ev.goods_title}}</span>
+                                            </a>
+                                        {{else /}}
+                                            <div class="extraction-take-goods">
+                                                {{if !empty($ev['goods_images'])}}
+                                                    <img class="am-img-thumbnail am-radius" src="{{$ev.goods_images}}" width="45" height="45" alt="{{$ev.goods_title}}" />
+                                                {{/if}}
+                                                <span class="extraction-take-goods-title am-text-sm am-text-truncate-2">{{$ev.goods_title}}</span>
+                                            </div>
+                                        {{/if}}
+                                        <div class="extraction-take-code">
+                                            {{if !empty($ev['images'])}}
+                                                <img class="am-img-thumbnail am-radius common-annex-view-event" src="{{$ev.images}}" width="140" height="140" data-is-download="1" />
+                                            {{/if}}
+                                            <p class="extraction-take-meta am-margin-top-sm">
+                                                <span class="extraction-take-meta-label">{{:MyLang('order.form_item_take')}}：</span>
+                                                <span class="extraction-take-meta-value">
+                                                    {{if empty($ev['code'])}}
+                                                        <span class="am-text-danger">{{:MyLang('no_data')}}</span>
+                                                    {{else /}}
+                                                        <span class="am-color-blue am-font-weight text-copy-submit" data-value="{{$ev.code}}">
+                                                            <span>{{$ev.code}}</span>
+                                                            <i class="iconfont icon-copy am-margin-left-xs am-color-grey"></i>
+                                                        </span>
+                                                    {{/if}}
+                                                </span>
+                                            </p>
+                                            <p class="extraction-take-meta am-margin-top-xs">
+                                                <span class="extraction-take-meta-label">{{:MyLang('order.form_item_take_verify_progress')}}：</span>
+                                                <span class="extraction-take-meta-value">
+                                                    <span class="am-text-success">{{$ev.verify_number}}</span>
+                                                    <span>/</span>
+                                                    <span>{{$ev.total_number}}</span>
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                {{/foreach}}
+                            </div>
+                            <a href="javascript:;" class="extraction-take-arrow extraction-take-next am-icon-angle-right"></a>
+                        </div>
+                    {{else /}}
+                        <div class="extraction-take-code">
+                            {{if !empty($data['extraction_data']['images'])}}
+                                <img class="am-img-thumbnail am-radius common-annex-view-event" src="{{$data.extraction_data.images}}" width="140" height="140" data-is-download="1" />
+                            {{/if}}
+                            <p class="am-margin-top-sm">
+                                <span>{{:MyLang('order.form_item_take')}}：</span>
+                                {{if empty($data['extraction_data']['code'])}}
+                                    <span class="am-text-danger">{{:MyLang('no_data')}}</span>
+                                {{else /}}
+                                    <span class="am-color-blue am-font-weight text-copy-submit am-vertical-align-middle" data-value="{{$data.extraction_data.code}}">
+                                        <span>{{$data.extraction_data.code}}</span>
+                                        <i class="iconfont icon-copy am-margin-left-xs am-color-grey"></i>
+                                    </span>
+                                {{/if}}
+                            </p>
+                        </div>
                     {{/if}}
                 {{else /}}
                     {{:ModuleInclude('public/not_data')}}

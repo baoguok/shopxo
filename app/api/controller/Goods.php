@@ -62,40 +62,57 @@ class Goods extends Common
         } else {
             // 是否独立手机端详情
             $is_use_mobile_detail = intval(MyC('common_app_is_use_mobile_detail', 0, true));
-            // 获取商品
-            $params = [
-                'where'           => [
-                    ['id', '=', $goods_id],
-                    ['is_delete_time', '=', 0],
-                ],
-                'is_content_app'  => $is_use_mobile_detail,
-                'is_spec'         => 1,
-                'is_params'       => 1,
-                'is_favor'        => 1,
-            ];
-            $ret = GoodsService::GoodsList($params);
-            if(empty($ret['data'][0]) || $ret['data'][0]['is_delete_time'] != 0)
-            {
-                $ret = DataReturn(MyLang('goods_no_exist_or_delete_error_tips'), -1);
-            } else {
-                // 商品信息
-                $goods = $ret['data'][0];
+            $user_id = !empty($this->user) && !empty($this->user['id']) ? intval($this->user['id']) : 0;
 
-                // 商品详情处理
+            // 获取商品（缓存不含用户收藏状态）
+            $goods = MyCacheRemember('cache_api_goods_detail_goods_'.$goods_id.'_'.$is_use_mobile_detail, function() use ($goods_id, $is_use_mobile_detail) {
+                $params = [
+                    'where'           => [
+                        ['id', '=', $goods_id],
+                        ['is_delete_time', '=', 0],
+                    ],
+                    'is_content_app'  => $is_use_mobile_detail,
+                    'is_spec'         => 1,
+                    'is_params'       => 1,
+                    'is_favor'        => 0,
+                ];
+                $ret = GoodsService::GoodsList($params);
+                if(empty($ret['data'][0]))
+                {
+                    return [];
+                }
+                $goods = $ret['data'][0];
                 if($is_use_mobile_detail == 1)
                 {
                     unset($goods['content_web']);
+                }
+                return $goods;
+            });
+            if(empty($goods) || $goods['is_delete_time'] != 0)
+            {
+                $ret = DataReturn(MyLang('goods_no_exist_or_delete_error_tips'), -1);
+            } else {
+                // 用户收藏状态（实时）
+                $goods['user_is_favor'] = 0;
+                if($user_id > 0)
+                {
+                    $favor = GoodsService::UserFavorGoodsCountData([$goods_id], ['user'=>$this->user]);
+                    $goods['user_is_favor'] = (!empty($favor) && in_array($goods_id, $favor)) ? 1 : 0;
                 }
 
                 // 展示商品评分
                 if(MyC('common_is_goods_detail_show_comments', 0) == 1)
                 {
-                    // 商品评价总数
-                    $goods['comments_count'] = GoodsCommentsService::GoodsCommentsTotal(['goods_id'=>$goods_id, 'is_show'=>1]);
-                    // 评分
-                    $goods['comments_score'] = GoodsCommentsService::GoodsCommentsScore($goods_id);
-                    // 最新3条评价
-                    $goods['comments_data'] = GoodsCommentsService::GoodsFirstSeveralComments($goods_id);
+                    $comments = MyCacheRemember('cache_api_goods_detail_comments_'.$goods_id, function() use ($goods_id) {
+                        return [
+                            'comments_count' => GoodsCommentsService::GoodsCommentsTotal(['goods_id'=>$goods_id, 'is_show'=>1]),
+                            'comments_score' => GoodsCommentsService::GoodsCommentsScore($goods_id),
+                            'comments_data'  => GoodsCommentsService::GoodsFirstSeveralComments($goods_id),
+                        ];
+                    });
+                    $goods['comments_count'] = $comments['comments_count'];
+                    $goods['comments_score'] = $comments['comments_score'];
+                    $goods['comments_data'] = $comments['comments_data'];
                 }
 
                 // 商品访问统计
@@ -105,23 +122,33 @@ class Goods extends Common
                 GoodsBrowseService::GoodsBrowseSave(['goods_id'=>$goods_id, 'user'=>$this->user]);
 
                 // 商品所属分类名称
-                $category = GoodsCategoryService::GoodsCategoryNames($goods_id);
-                $goods['category_names'] = $category['data'];
+                $goods['category_names'] = MyCacheRemember('cache_api_goods_detail_category_names_'.$goods_id, function() use ($goods_id) {
+                    $category = GoodsCategoryService::GoodsCategoryNames($goods_id);
+                    return empty($category['data']) ? [] : $category['data'];
+                });
 
                 // 中间tabs导航
                 $middle_tabs_nav = GoodsService::GoodsDetailMiddleTabsNavList($goods);
 
                 // 导航更多列表
-                $nav_more_list = AppService::GoodsNavMoreList(['data'=>$goods, 'page'=>'goods']);
+                $nav_more_list = MyCacheRemember('cache_api_goods_detail_nav_more_list_'.$goods_id, function() use ($goods) {
+                    return AppService::GoodsNavMoreList(['data'=>$goods, 'page'=>'goods']);
+                });
 
-                // 商品底部导航左侧小导航
-                $buy_left_nav = GoodsService::GoodsBuyLeftNavList($goods);
+                // 商品底部导航左侧小导航（仅收藏状态区分，0未收藏/1已收藏）
+                $buy_left_nav = MyCacheRemember('cache_api_goods_detail_buy_left_nav_'.$goods_id.'_'.intval($goods['user_is_favor']), function() use ($goods) {
+                    return GoodsService::GoodsBuyLeftNavList($goods);
+                });
 
                 // 商品购买按钮列表
-                $buy_button = GoodsService::GoodsBuyButtonList($goods);
+                $buy_button = MyCacheRemember('cache_api_goods_detail_buy_button_'.$goods_id, function() use ($goods) {
+                    return GoodsService::GoodsBuyButtonList($goods);
+                });
 
                 // 猜你喜欢
-                $guess_you_like = GoodsService::GoodsDetailGuessYouLikeData($goods['id']);
+                $guess_you_like = MyCacheRemember('cache_api_goods_detail_guess_you_like_'.$goods_id, function() use ($goods_id) {
+                    return GoodsService::GoodsDetailGuessYouLikeData($goods_id);
+                });
 
                 // 数据返回
                 $result = [

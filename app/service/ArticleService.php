@@ -67,8 +67,8 @@ class ArticleService
     public static function ArticleList($params)
     {
         $where = empty($params['where']) ? [] : $params['where'];
-        $field = empty($params['field']) ? '*' : $params['field'];
-        $order_by = empty($params['order_by']) ? self::ArticleByOrder($params) : trim($params['order_by']);
+        $field = empty($params['field']) ? '*' : ResourcesService::DbFieldSafeHandle($params['field'], 'Article');
+        $order_by = empty($params['order_by']) ? self::ArticleByOrder($params) : ResourcesService::DbOrderBySafeHandle($params['order_by'], 'Article');
         $m = isset($params['m']) ? intval($params['m']) : 0;
         $n = isset($params['n']) ? intval($params['n']) : 10;
 
@@ -242,7 +242,11 @@ class ArticleService
             ];
             if(array_key_exists($params['order_by_key'], $arr))
             {
-                $order_by = $arr[$params['order_by_key']].' '.$params['order_by_val'];
+                $order_by_val = strtolower(trim($params['order_by_val']));
+                if(in_array($order_by_val, ['asc', 'desc'], true))
+                {
+                    $order_by = $arr[$params['order_by_key']].' '.$order_by_val;
+                }
             }
         }
         return $order_by;

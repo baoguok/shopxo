@@ -26,6 +26,7 @@ use app\service\GoodsBrowseService;
 use app\service\MessageService;
 use app\service\IntegralService;
 use app\service\StoreService;
+use app\module\DiyModule;
 
 /**
  * DiyApi服务层
@@ -394,6 +395,7 @@ class DiyApiService
      */
     public static function GoodsAutoData($params = [])
     {
+        $params = self::AutoDataParamsHandle($params);
         $result = GoodsService::AutoGoodsList($params);
         return DataReturn('success', 0, $result);
     }
@@ -439,6 +441,7 @@ class DiyApiService
      */
     public static function ArticleAutoData($params = [])
     {
+        $params = self::AutoDataParamsHandle($params);
         $result = ArticleService::AutoArticleList($params);
         return DataReturn('success', 0, $result);
     }
@@ -484,8 +487,28 @@ class DiyApiService
      */
     public static function BrandAutoData($params = [])
     {
+        $params = self::AutoDataParamsHandle($params);
         $result = BrandService::AutoBrandList($params);
         return DataReturn('success', 0, $result);
+    }
+
+    /**
+     * 自动数据请求参数变量替换
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [array]           $params [输入参数]
+     */
+    public static function AutoDataParamsHandle($params = [])
+    {
+        $replace_params = DiyModule::ConfigRequestParams($params);
+        if(!empty($replace_params))
+        {
+            $params = DiyModule::ConfigParamsReplace($params, $replace_params);
+        }
+        return $params;
     }
 
     /**

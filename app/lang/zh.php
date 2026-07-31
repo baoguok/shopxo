@@ -1049,7 +1049,7 @@ return [
     // 所属平台
     'common_platform_type' => [
         'pc'        => 'PC网站',
-        'h5'        => 'H5手机网站',
+        'h5'        => 'H5手机',
         'ios'       => '苹果APP',
         'android'   => '安卓APP',
         'weixin'    => '微信小程序',
@@ -1058,11 +1058,13 @@ return [
         'toutiao'   => '头条小程序',
         'qq'        => 'QQ小程序',
         'kuaishou'  => '快手小程序',
+        'harmony'   => '鸿蒙APP',
     ],
     // app平台
     'common_app_type' => [
         'ios'       => '苹果APP',
         'android'   => '安卓APP',
+        'harmony'   => '鸿蒙APP',
     ],
     // 小程序平台
     'common_appmini_type' => [
@@ -1370,6 +1372,17 @@ return [
         1 => '一级分类',
         2 => '二级分类',
         3 => '三级分类',
+    ],
+    // 商品分类页面商品列表模式一级分类图标类型
+    'common_goods_category_model_icon_type_list' => [
+        0 => '实景图',
+        1 => 'icon图标',
+        2 => '大图片',
+    ],
+    // 用户中心菜单展示模式
+    'common_user_center_nav_show_model_type_list' => [
+        0 => '九宫格',
+        1 => '列表',
     ],
     // 图片验证码类型
     'common_site_images_verify_rand_type_list' => [
@@ -2558,6 +2571,8 @@ return [
             'take_extraction_code_message'          => '取货码有误',
             'take_extraction_code_empty_tips'       => '订单取货码不存在、请联系管理员',
             'take_extraction_code_error_tips'       => '取货码不正确',
+            'take_extraction_code_finish_tips'      => '该商品取货码已全部核销',
+            'take_extraction_code_number_error_tips'=> '核销数量有误，可核销剩余次数',
             'order_delivery_message_data'           => [
                 'title'  => '订单发货',
                 'desc'   => '订单已发货',
@@ -2638,6 +2653,15 @@ return [
             'pay_respond_file_no_exist_tips'        => '支付返回入口文件不存在，请联系管理员处理',
             'pay_notify_file_no_exist_tips'         => '支付通知入口文件不存在，请联系管理员处理',
             'not_install_weixin_payment_tips'       => '请先安装【微信APP小程序支付】支付插件',
+            'payment_identification_error_tips'     => '支付方式标识有误',
+            'payment_file_no_exist_tips'              => '支付方式文件不存在',
+            'form_item_version'                     => '版本',
+            'form_item_version_tips'                => '主版本.次版本号.修订号，每个段不超过6位，如 1.0.0',
+            'form_item_version_message'             => '版本格式有误',
+            'form_item_desc'                        => '描述',
+            'form_item_desc_message'                => '描述内容格式2~60个字符',
+            'form_item_apply_version'               => '适用系统版本',
+            'form_item_apply_version_message'       => '至少选择一个适用系统版本',
         ],
         // 支付请求日志
         'payrequestlog'             => [
@@ -3071,6 +3095,7 @@ return [
             'save_admin_info_error_tips'            => '当前操作管理员信息有误',
             'save_user_already_exist_tips'          => '用户已存在[{$var}]',
             'save_gender_range_error_tips'          => '性别值范围不正确',
+            'login_verify_auto_register_close_tips' => '帐号不存在，请先注册或联系管理员开启验证码登录自动注册',
             'save_status_range_error_tips'          => '状态值范围不正确',
             'save_user_info_no_exist_tips'          => '用户信息不存在',
             'save_nickname_format_error_tips'       => '昵称1~60个字符之间',
@@ -4162,6 +4187,11 @@ return [
             'desc' => '默认关闭，可以防止非法登录',
             'tips' => '请选择是否开启登录图片验证码',
         ],
+        'home_user_login_verify_auto_register'  => [
+            'name' => '验证码登录自动注册',
+            'desc' => '开启后，手机或邮箱验证码登录时用户不存在则自动注册并登录',
+            'tips' => '请选择是否开启验证码登录自动注册',
+        ],
         'home_site_user_forgetpwd_ad1_images'  => [
             'name' => '图片',
             'desc' => '图片1 [ 建议使用 450*350px ]',
@@ -4249,7 +4279,7 @@ return [
         ],
         'common_user_is_mandatory_bind_mobile'  => [
             'name' => '强制绑定手机',
-            'desc' => '默认否',
+            'desc' => '',
             'tips' => '请选择是否强制绑定手机',
         ],
         'common_app_is_header_nav_fixed'  => [
@@ -4358,8 +4388,18 @@ return [
         ],
         'common_app_is_head_vice_nav'  => [
             'name' => '是否启用用户中心头部小导航',
-            'desc' => '默认是',
+            'desc' => '',
             'tips' => '请选择是否启用用户中心头部小导航',
+        ],
+        'common_is_share_use_image'  => [
+            'name' => '分享转发使用默认图片',
+            'desc' => '',
+            'tips' => '请选择分享及转发是否使用页面设置的默认图片及系统默认图片',
+        ],
+        'common_user_center_nav_show_model_type'  => [
+            'name' => '用户中心菜单展示模式',
+            'desc' => '',
+            'tips' => '请选择用户中心菜单展示模式',
         ],
         'common_app_is_weixin_force_user_base'  => [
             'name' => '微信小程序强制填写基础信息',
@@ -4490,6 +4530,21 @@ return [
             'name' => '分类展示层级',
             'desc' => '默认 分类+商品',
             'tips' => '请选择分类展示层级',
+        ],
+        'common_goods_category_model_icon_type'  => [
+            'name' => '商品列表模式一级分类图标',
+            'desc' => '仅手机端商品列表模式有效',
+            'tips' => '请选择商品列表模式一级分类图标类型',
+        ],
+        'common_goods_category_is_search_alone'  => [
+            'name' => '搜索进入独立搜索页',
+            'desc' => '仅手机端有效',
+            'tips' => '请选择商品分类搜索是否进入独立搜索页',
+        ],
+        'common_goods_category_is_show_cart_nav'  => [
+            'name' => '开启购物车导航',
+            'desc' => '仅手机端商品列表模式有效',
+            'tips' => '请选择商品分类页是否开启购物车导航',
         ],
         'common_cdn_attachment_host'  => [
             'name' => '附件cdn域名',
@@ -4757,6 +4812,16 @@ return [
             'name' => '商品封面高度拉伸（手机端）',
             'desc' => '默认 正方形',
             'tips' => '请选择商品封面高度拉伸（手机端）',
+        ],
+        'common_goods_detail_bottom_opt_cart'  => [
+            'name' => '商品详情页底部导航开启购物车（手机端）',
+            'desc' => '',
+            'tips' => '请选择商品详情页底部导航是否开启购物车',
+        ],
+        'common_goods_list_show_cart_opt'  => [
+            'name' => '商品列表展示购物车（手机端）',
+            'desc' => '',
+            'tips' => '请选择商品列表是否展示购物车',
         ],
         'common_goods_close_buy_button'  => [
             'name' => '关闭商品下单按钮',

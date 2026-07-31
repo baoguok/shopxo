@@ -618,20 +618,58 @@ class PaymentService
         {
             return false;
         }
-        $norm = str_replace('\\', '/', $name);
-        if(strpos($norm, '..') !== false)
+        $norm = str_replace('\\', '/', trim($name));
+        if($norm === '' || substr($norm, -1) === '/')
         {
             return false;
         }
-        if(basename($norm) !== $norm)
+        // 归一化根路径（./、/）
+        $norm = ltrim($norm, './');
+        if($norm === '' || strpos($norm, '..') !== false || strpos($norm, '/') !== false)
         {
             return false;
         }
-        if(!preg_match('/^[A-Za-z_][A-Za-z0-9_]*\.php$/', $norm))
+        if(!preg_match('/^[A-Za-z_][A-Za-z0-9_]*\.php$/i', $norm))
         {
             return false;
         }
         return ['payment' => substr($norm, 0, -4)];
+    }
+
+    /**
+     * zip内可忽略的条目（目录、系统文件等）
+     * @author  Devil
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @param   [string]          $name [zip 内相对路径]
+     * @return  [boolean]
+     */
+    private static function UploadZipPaymentEntryIgnorable($name)
+    {
+        if(!is_string($name) || $name === '')
+        {
+            return true;
+        }
+        $norm = str_replace('\\', '/', $name);
+        if(strpos($norm, '__MACOSX') !== false || strpos($norm, '/.') !== false)
+        {
+            return true;
+        }
+        if(substr($norm, -1) === '/')
+        {
+            return true;
+        }
+        $base = basename($norm);
+        if(in_array($base, ['.DS_Store', 'Thumbs.db', 'desktop.ini'], true) || strpos($base, '._') === 0)
+        {
+            return true;
+        }
+        $lower = strtolower($base);
+        if(substr($lower, -4) !== '.php')
+        {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -731,71 +769,62 @@ class PaymentService
             // 资源文件
             $file = $zip->getNameIndex($i);
 
-            // 排除临时文件和临时目录
-            if(strpos($file, '/.') === false && strpos($file, '__') === false)
+            // 忽略目录、系统文件等非支付插件条目
+            if(self::UploadZipPaymentEntryIgnorable($file))
             {
-                // 忽略非php文件（大小写）
-                $lower = strtolower($file);
-                if(substr($lower, -4) != '.php')
-                {
-                    $error++;
-                    continue;
-                }
+                continue;
+            }
 
-                // zip 条目名校验（须为根目录下单个合法插件名）
-                $entry = self::UploadZipPaymentEntryValid($file);
-                if($entry === false)
-                {
-                    $error++;
-                    continue;
-                }
-                $payment = $entry['payment'];
+            // zip 条目名校验（须为根目录下单个合法插件名）
+            $entry = self::UploadZipPaymentEntryValid($file);
+            if($entry === false)
+            {
+                $error++;
+                continue;
+            }
+            $payment = $entry['payment'];
 
-                // 是否已存在同名插件文件
-                if(is_file(self::$payment_dir.$payment.'.php'))
+            // 如果不是目录则写入文件（已存在则覆盖）
+            $new_file = self::$payment_dir.$payment.'.php';
+            if(!is_dir($new_file))
+            {
+                // 读取这个文件
+                $stream = $zip->getStream($file);
+                if($stream !== false)
                 {
-                    $error++;
-                    continue;
-                }
-
-                // 如果不是目录则写入文件
-                $new_file = self::$payment_dir.$payment.'.php';
-                if(!is_dir($new_file))
-                {
-                    // 读取这个文件
-                    $stream = $zip->getStream($file);
-                    if($stream !== false)
+                    $file_content = stream_get_contents($stream);
+                    fclose($stream);
+                    if($file_content !== false && self::UploadZipPaymentPhpSourceSafe($file_content))
                     {
-                        $file_content = stream_get_contents($stream);
-                        fclose($stream);
-                        if($file_content !== false && self::UploadZipPaymentPhpSourceSafe($file_content))
+                        if(@file_put_contents($new_file, $file_content) !== false)
                         {
-                            if(@file_put_contents($new_file, $file_content) !== false)
+                            // 文件校验
+                            $config = self::GetPaymentConfig($payment);
+                            if($config === false)
                             {
-                                // 文件校验
-                                $config = self::GetPaymentConfig($payment);
-                                if($config === false)
+                                $error++;
+                                @unlink($new_file);
+                            } else {
+                                // 安全验证
+                                $ret = self::PaymentLegalCheck($payment);
+                                if($ret['code'] != 0)
                                 {
-                                    $error++;
                                     @unlink($new_file);
-                                } else {
-                                    // 安全验证
-                                    $ret = self::PaymentLegalCheck($payment);
-                                    if($ret['code'] != 0)
-                                    {
-                                        @unlink($new_file);
-                                        $zip->close();
-                                        return $ret;
-                                    }
-
-                                    // 安装成功
-                                    $success++;
+                                    $zip->close();
+                                    return $ret;
                                 }
+
+                                // 安装成功
+                                $success++;
                             }
                         } else {
                             $error++;
                         }
+                    } else {
+                        $error++;
                     }
+                } else {
+                    $error++;
                 }
             }
         }
@@ -997,6 +1026,12 @@ class PaymentService
             return DataReturn($ret, -1);
         }
 
+        // 支付标识仅允许安全字符，防止入口 PHP 源码/文件名注入
+        if(!self::EntranceSafeKey($params['payment']))
+        {
+            return DataReturn(MyLang('common_service.payment.payment_identification_error_tips'), -1);
+        }
+
         // 权限
         $ret = self::PowerCheck();
         if($ret['code'] != 0)
@@ -1022,19 +1057,47 @@ class PaymentService
             $params['respond'] = substr($params['respond'], 7);
         }
 
+        // 路由与模块二次校验
+        if(!self::EntranceSafeRoute($params['notify']) || !self::EntranceSafeRoute($params['respond']))
+        {
+            return DataReturn(MyLang('common_service.payment.create_payment_empty_tips'), -1);
+        }
+        if(!in_array($module_notify, ['index', 'api'], true) || !in_array($module_respond, ['index', 'api'], true))
+        {
+            return DataReturn(MyLang('common_service.payment.create_payment_empty_tips'), -1);
+        }
+
         // 不生成异步入口
         $not_notify = empty($params['not_notify']) ? MyConfig('shopxo.under_line_list') : $params['not_notify'];
 
         // 处理业务
         $business_all = empty($params['business']) ? self::$payment_business_type_all : $params['business'];
 
-        // 系统类型
+        // 系统类型（已在 SystemTypeValue 白名单校验）
         $system_type = SystemService::SystemTypeValue();
+        if(!SystemService::SystemTypeValueIsLegal($system_type))
+        {
+            return DataReturn(MyLang('common_service.payment.create_payment_empty_tips'), -1);
+        }
+
+        // 嵌入 PHP 字面量（var_export 防止引号逃逸）
+        $payment_export = var_export($params['payment'], true);
+        $system_type_export = var_export($system_type, true);
+        $notify_export = var_export($params['notify'], true);
+        $respond_export = var_export($params['respond'], true);
+        $module_notify_export = var_export($module_notify, true);
+        $module_respond_export = var_export($module_respond, true);
 
         // 批量创建
         foreach($business_all as $v)
         {
             $business_name = strtolower($v['name']);
+            if(!self::EntranceSafeKey($business_name))
+            {
+                continue;
+            }
+            // 业务描述仅用于注释，去掉注释闭合符
+            $business_desc = str_replace(['*/', "\r", "\n"], '', strval($v['desc']));
             if(defined('IS_ROOT_ACCESS'))
             {
 // 异步
@@ -1042,18 +1105,18 @@ $notify=<<<php
 <?php
 
 /**
- * {$v['desc']}支付异步入口
+ * {$business_desc}支付异步入口
  */
 namespace think;
 
 // 默认绑定模块
-\$_GET['s'] = '{$params["notify"]}';
+\$_GET['s'] = {$notify_export};
 
 // 指定系统类型
-define('SYSTEM_TYPE', '{$system_type}');
+define('SYSTEM_TYPE', {$system_type_export});
 
 // 支付模块标记
-define('PAYMENT_TYPE', '{$params["payment"]}');
+define('PAYMENT_TYPE', {$payment_export});
 
 // 根目录入口
 define('IS_ROOT_ACCESS', true);
@@ -1066,7 +1129,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 // 执行HTTP应用并响应
 \$http = (new App())->http;
-\$response = \$http->name('{$module_notify}')->run();
+\$response = \$http->name({$module_notify_export})->run();
 \$response->send();
 \$http->end(\$response);
 ?>
@@ -1077,18 +1140,18 @@ $respond=<<<php
 <?php
 
 /**
- * {$v['desc']}支付同步入口
+ * {$business_desc}支付同步入口
  */
 namespace think;
 
 // 默认绑定模块
-\$_GET['s'] = '{$params["respond"]}';
+\$_GET['s'] = {$respond_export};
 
 // 指定系统类型
-define('SYSTEM_TYPE', '{$system_type}');
+define('SYSTEM_TYPE', {$system_type_export});
 
 // 支付模块标记
-define('PAYMENT_TYPE', '{$params["payment"]}');
+define('PAYMENT_TYPE', {$payment_export});
 
 // 根目录入口
 define('IS_ROOT_ACCESS', true);
@@ -1101,7 +1164,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 // 执行HTTP应用并响应
 \$http = (new App())->http;
-\$response = \$http->name('{$module_respond}')->run();
+\$response = \$http->name({$module_respond_export})->run();
 \$response->send();
 \$http->end(\$response);
 ?>
@@ -1114,18 +1177,18 @@ $notify=<<<php
 <?php
 
 /**
- * {$v['desc']}支付异步入口
+ * {$business_desc}支付异步入口
  */
 namespace think;
 
 // 默认绑定模块
-\$_GET['s'] = '{$params["notify"]}';
+\$_GET['s'] = {$notify_export};
 
 // 指定系统类型
-define('SYSTEM_TYPE', '{$system_type}');
+define('SYSTEM_TYPE', {$system_type_export});
 
 // 支付模块标记
-define('PAYMENT_TYPE', '{$params["payment"]}');
+define('PAYMENT_TYPE', {$payment_export});
 
 // 引入公共入口文件
 require __DIR__.'/core.php';
@@ -1135,7 +1198,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 // 执行HTTP应用并响应
 \$http = (new App())->http;
-\$response = \$http->name('{$module_notify}')->run();
+\$response = \$http->name({$module_notify_export})->run();
 \$response->send();
 \$http->end(\$response);
 ?>
@@ -1146,18 +1209,18 @@ $respond=<<<php
 <?php
 
 /**
- * {$v['desc']}支付同步入口
+ * {$business_desc}支付同步入口
  */
 namespace think;
 
 // 默认绑定模块
-\$_GET['s'] = '{$params["respond"]}';
+\$_GET['s'] = {$respond_export};
 
 // 指定系统类型
-define('SYSTEM_TYPE', '{$system_type}');
+define('SYSTEM_TYPE', {$system_type_export});
 
 // 支付模块标记
-define('PAYMENT_TYPE', '{$params["payment"]}');
+define('PAYMENT_TYPE', {$payment_export});
 
 // 引入公共入口文件
 require __DIR__.'/core.php';
@@ -1167,7 +1230,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 // 执行HTTP应用并响应
 \$http = (new App())->http;
-\$response = \$http->name('{$module_respond}')->run();
+\$response = \$http->name({$module_respond_export})->run();
 \$response->send();
 \$http->end(\$response);
 ?>
@@ -1216,6 +1279,10 @@ php;
         {
             return DataReturn(MyLang('common_service.payment.create_payment_empty_tips'), -1);
         }
+        if(!self::EntranceSafeKey($params['payment']))
+        {
+            return DataReturn(MyLang('common_service.payment.payment_identification_error_tips'), -1);
+        }
 
         // 处理业务
         $business_all = empty($params['business']) ? self::$payment_business_type_all : $params['business'];
@@ -1236,6 +1303,36 @@ php;
     }
 
     /**
+     * 支付入口安全标识（文件名/PAYMENT_TYPE）
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-07-27
+     * @desc    仅字母数字下划线中划线，防 PHP 注入
+     * @param   [mixed]          $value [标识]
+     */
+    public static function EntranceSafeKey($value)
+    {
+        return is_string($value) && $value !== '' && preg_match('/^[a-zA-Z0-9_-]+$/', $value) === 1;
+    }
+
+    /**
+     * 支付入口路由参数是否合法
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-07-27
+     * @desc    允许路径分隔符，禁止 .. 与注入字符
+     * @param   [mixed]          $value [路由]
+     */
+    public static function EntranceSafeRoute($value)
+    {
+        return is_string($value) && $value !== ''
+            && strpos($value, '..') === false
+            && preg_match('/^[a-zA-Z0-9_\/-]+$/', $value) === 1;
+    }
+
+    /**
      * 入口文件信息
      * @author   Devil
      * @blog    http://gong.gg/
@@ -1249,9 +1346,17 @@ php;
     {
         // 系统类型
         $system_type = SystemService::SystemTypeValue();
+        if(!SystemService::SystemTypeValueIsLegal($system_type))
+        {
+            $system_type = 'default';
+        }
+
+        // 文件名组件强制安全字符，避免注入字符进入路径
+        $payment = self::EntranceSafeKey($payment) ? strtolower($payment) : 'invalid';
+        $name = self::EntranceSafeKey($name) ? strtolower($name) : 'invalid';
 
         // 地址路径名称
-        $dir = 'payment_'.$system_type.'_'.strtolower($name).'_'.strtolower($payment);
+        $dir = 'payment_'.$system_type.'_'.$name.'_'.$payment;
         return [
             'respond'  => $dir.'_respond.php',
             'notify'  => $dir.'_notify.php',
@@ -1270,6 +1375,12 @@ php;
      */
     public static function EntranceFileChecked($payment, $name)
     {
+        // 非法支付标识直接失败，避免后续按污染参数创建入口
+        if(!self::EntranceSafeKey($payment) || !self::EntranceSafeKey($name))
+        {
+            return DataReturn(MyLang('common_service.payment.payment_identification_error_tips'), -1);
+        }
+
         // 文件名称
         $file = self::EntranceFileData($payment, $name);
 
@@ -1369,6 +1480,186 @@ php;
             $payment_id = $params['payment_id'];
         }
         return $payment_id;
+    }
+
+    /**
+     * 支付方式打包
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [array]           $params [输入参数]
+     */
+    public static function PaymentDownload($params = [])
+    {
+        // 生成下载包
+        $package = self::PaymentDownloadHandle($params);
+        if($package['code'] != 0)
+        {
+            return $package;
+        }
+
+        // 开始下载
+        $config = $package['data']['config'];
+        if(\base\FileUtil::DownloadFile($package['data']['file'], $config['name'].'_v'.$config['version'].'.zip', true))
+        {
+            return DataReturn(MyLang('download_success'), 0);
+        }
+        return DataReturn(MyLang('download_fail'), -100);
+    }
+
+    /**
+     * 上传到应用商店
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [array]           $params [输入参数]
+     */
+    public static function PaymentStoreUpload($params = [])
+    {
+        // 请求参数
+        $p = [
+            [
+                'checked_type'      => 'empty',
+                'key_name'          => 'payment',
+                'error_msg'         => MyLang('common_service.payment.payment_identification_error_tips'),
+            ],
+            [
+                'checked_type'      => 'empty',
+                'key_name'          => 'version_new',
+                'error_msg'         => MyLang('common_service.payment.form_item_version_message'),
+            ],
+            [
+                'checked_type'      => 'empty',
+                'key_name'          => 'describe',
+                'error_msg'         => MyLang('common_service.payment.form_item_desc_message'),
+            ],
+            [
+                'checked_type'      => 'empty',
+                'key_name'          => 'apply_version',
+                'error_msg'         => MyLang('common_service.payment.form_item_apply_version_message'),
+            ],
+        ];
+        $ret = ParamsChecked($params, $p);
+        if($ret !== true)
+        {
+            return DataReturn($ret, -1);
+        }
+
+        // 生成下载包
+        $params['id'] = $params['payment'];
+        $package = self::PaymentDownloadHandle($params);
+        if($package['code'] != 0)
+        {
+            return $package;
+        }
+
+        // 帐号信息
+        $user = StoreService::AccountsData();
+        if(empty($user['accounts']) || empty($user['password']))
+        {
+            return DataReturn(MyLang('store_account_not_bind_tips'), -300);
+        }
+
+        // 上传到远程
+        $params['payment'] = $package['data']['payment'];
+        $params['file'] = new \CURLFile($package['data']['file']);
+        $ret = StoreService::RemoteStoreData($user['accounts'], $user['password'], MyConfig('shopxo.store_payment_upload_url'), $params, 2);
+        // 是个与否都删除本地生成的zip包
+        @unlink($package['data']['file']);
+        // 返回数据
+        return $ret;
+    }
+
+    /**
+     * 支付方式打包处理
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [array]           $params [输入参数]
+     */
+    public static function PaymentDownloadHandle($params = [])
+    {
+        // 请求参数
+        $payment = empty($params['payment']) ? (empty($params['id']) ? '' : $params['id']) : $params['payment'];
+        if(empty($payment))
+        {
+            return DataReturn(MyLang('common_service.payment.payment_identification_error_tips'), -1);
+        }
+
+        // 是否开启开发者模式
+        if(MyConfig('shopxo.is_develop') !== true)
+        {
+            return DataReturn(MyLang('not_open_developer_mode_tips'), -1);
+        }
+
+        // 防止路径回溯
+        $payment = htmlentities(str_replace(array('.', '/', '\\', ':'), '', strip_tags($payment)));
+        if(empty($payment))
+        {
+            return DataReturn(MyLang('common_service.payment.payment_identification_error_tips'), -1);
+        }
+
+        // 初始化
+        self::Init();
+
+        // 文件是否存在
+        $file = self::$payment_dir.$payment.'.php';
+        if(!is_file($file))
+        {
+            return DataReturn(MyLang('common_service.payment.payment_file_no_exist_tips'), -1);
+        }
+
+        // 配置信息
+        $config = self::GetPaymentConfig($payment);
+        if($config === false)
+        {
+            return DataReturn(MyLang('plugins_config_error_tips'), -10);
+        }
+
+        // 安全验证
+        $ret = self::PaymentLegalCheck($payment);
+        if($ret['code'] != 0)
+        {
+            return $ret;
+        }
+
+        // 生成压缩包（根目录直接放php文件，不带目录）
+        $package_dir = ROOT.'runtime'.DS.'data'.DS.'payment_package';
+        \base\FileUtil::CreateDir($package_dir);
+        $dir_zip = $package_dir.DS.$payment.'.zip';
+
+        $zip = new \ZipArchive();
+        if($zip->open($dir_zip, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true)
+        {
+            return DataReturn(MyLang('form_generate_zip_message'), -2);
+        }
+        $file_content = @file_get_contents($file);
+        if($file_content === false)
+        {
+            $zip->close();
+            @unlink($dir_zip);
+            return DataReturn(MyLang('project_copy_fail_tips'), -2);
+        }
+        if(!$zip->addFromString($payment.'.php', $file_content))
+        {
+            $zip->close();
+            @unlink($dir_zip);
+            return DataReturn(MyLang('form_generate_zip_message'), -2);
+        }
+        $zip->close();
+
+        // 返回数据
+        return DataReturn('success', 0, [
+            'file'     => $dir_zip,
+            'payment'  => $payment,
+            'config'   => self::DataAnalysis($config),
+        ]);
     }
 
     /**

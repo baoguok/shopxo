@@ -95,7 +95,7 @@ $(function()
     // 服务添加开启
     $('.service-submit-add').on('click', function()
     {
-        $popup_service.modal({width: 360});
+        $popup_service.modal({width: 360, closeViaDimmer: false});
         $popup_service.attr('data-type', 'add');
 
         // 清空数据
@@ -143,7 +143,7 @@ $(function()
         FormDataFill(value[index], 'form.form-validation-service');
 
         // 基础数据
-        $popup_service.modal({width: 360});
+        $popup_service.modal({width: 360, closeViaDimmer: false});
         $popup_service.attr('data-type', 'edit');
         $popup_service.attr('data-index', index);
     });

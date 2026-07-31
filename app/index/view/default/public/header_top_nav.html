@@ -21,12 +21,16 @@
 
                         {{if empty($user)}}
                             <em class="first am-vertical-align-middle">{{:MyLang('common.header_top_nav_left_not_login_first')}}</em>
-                            <em class="site-name">{{$home_site_name}}</em>
+                            <em class="site-name am-vertical-align-middle">{{$home_site_name}}</em>
                             {{if !empty($home_user_login_type)}}
-                                [<a href="{{:MyUrl('index/user/logininfo')}}">{{:MyLang('common.login_title')}}</a>]
+                                <em class="site-name am-vertical-align-middle">
+                                    [<a href="{{:MyUrl('index/user/logininfo')}}">{{:MyLang('common.login_title')}}</a>]
+                                </em>
                             {{/if}}
                             {{if !empty($home_user_reg_type)}}
-                                [<a href="{{:MyUrl('index/user/reginfo')}}">{{:MyLang('common.register_title')}}</a>]
+                                <em class="site-name am-vertical-align-middle">
+                                    [<a href="{{:MyUrl('index/user/reginfo')}}">{{:MyLang('common.register_title')}}</a>]
+                                </em>
                             {{/if}}
                         {{else /}}
                             <em class="first am-vertical-align-middle">{{:MyLang('common.header_top_nav_left_login_first')}}</em>
@@ -36,9 +40,9 @@
                             {{if !empty($user['user_name_view'])}}
                                 <em class="user">{{$user.user_name_view}}</em>
                             {{/if}}
-                            <em class="last">{{:MyLang('common.header_top_nav_left_login_last')}}</em>
-                            <em class="site-name">{{$home_site_name}}</em>
-                            <em class="logout"><a href="{{:MyUrl('index/user/logout')}}">[{{:MyLang('common.logout_title')}}]</a></em>
+                            <em class="last am-vertical-align-middle">{{:MyLang('common.header_top_nav_left_login_last')}}</em>
+                            <em class="site-name am-vertical-align-middle">{{$home_site_name}}</em>
+                            <em class="logout am-vertical-align-middle"><a href="{{:MyUrl('index/user/logout')}}">[{{:MyLang('common.logout_title')}}]</a></em>
                         {{/if}}
 
                         <!-- 公共顶部小导航钩子-左侧后面 -->

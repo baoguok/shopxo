@@ -75,17 +75,17 @@ class Order extends Common
         ];
         $data = OrderService::OrderList($data_params);
 
-        // 支付方式
-        $payment_list = PaymentService::BuyPaymentList(['is_enable'=>1, 'is_open_user'=>1]);
-
         // 返回数据
         $result = [
-            'total'               => $total,
-            'page_total'          => $page_total,
-            'data'                => $data['data'],
-            'payment_list'        => $payment_list,
-            'default_payment_id'  => PaymentService::BuyDefaultPayment($params),
+            'total'       => $total,
+            'page_total'  => $page_total,
+            'data'        => $data['data'],
         ];
+        if($this->page <= 1)
+        {
+            $result['payment_list'] = PaymentService::BuyPaymentList(['is_enable'=>1, 'is_open_user'=>1]);
+            $result['default_payment_id'] = PaymentService::BuyDefaultPayment($params);
+        }
         return ApiService::ApiDataReturn(SystemBaseService::DataReturn($result));
     }
 

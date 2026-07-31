@@ -1048,7 +1048,7 @@ return [
     // 所属平台
     'common_platform_type' => [
         'pc'        => 'PC網站',
-        'h5'        => 'H5手機網站',
+        'h5'        => 'H5手機',
         'ios'       => '蘋果APP',
         'android'   => '安卓APP',
         'weixin'    => '微信小程式',
@@ -1057,11 +1057,13 @@ return [
         'toutiao'   => '頭條小程式',
         'qq'        => 'QQ小程式',
         'kuaishou'  => '快手小程式',
+        'harmony'   => '鴻蒙APP',
     ],
     // app平台
     'common_app_type' => [
         'ios'       => '蘋果APP',
         'android'   => '安卓APP',
+        'harmony'   => '鴻蒙APP',
     ],
     // 小程序平台
     'common_appmini_type' => [
@@ -1369,6 +1371,17 @@ return [
         1 => '一級分類',
         2 => '二級分類',
         3 => '三級分類',
+    ],
+    // 商品分类页面商品列表模式一级分类图标类型
+    'common_goods_category_model_icon_type_list' => [
+        0 => '實景圖',
+        1 => 'icon圖標',
+        2 => '大圖片',
+    ],
+    // 用户中心菜单展示模式
+    'common_user_center_nav_show_model_type_list' => [
+        0 => '九宮格',
+        1 => '列表',
     ],
     // 图片验证码类型
     'common_site_images_verify_rand_type_list' => [
@@ -2553,6 +2566,8 @@ return [
             'take_extraction_code_message'          => '取貨碼有誤',
             'take_extraction_code_empty_tips'       => '訂單取貨碼不存在、請聯系管理員',
             'take_extraction_code_error_tips'       => '取貨碼不正確',
+            'take_extraction_code_finish_tips'      => '該商品取貨碼已全部核銷',
+            'take_extraction_code_number_error_tips'=> '核銷數量有誤，可核銷剩餘次數',
             'order_delivery_message_data'           => [
                 'title'  => '訂單發貨',
                 'desc'   => '訂單已發貨',
@@ -2633,6 +2648,15 @@ return [
             'pay_respond_file_no_exist_tips'        => '支付返回入口檔案不存在，請聯系管理員處理',
             'pay_notify_file_no_exist_tips'         => '支付通知入口檔案不存在，請聯系管理員處理',
             'not_install_weixin_payment_tips'       => '請先安裝【微信APP小程式支付】支付挿件',
+            'payment_identification_error_tips'     => '支付方式標識有誤',
+            'payment_file_no_exist_tips'              => '支付方式文件不存在',
+            'form_item_version'                     => '版本',
+            'form_item_version_tips'                => '主版本.次版本號.修訂號，每個段不超過6位，如 1.0.0',
+            'form_item_version_message'             => '版本格式有誤',
+            'form_item_desc'                        => '描述',
+            'form_item_desc_message'                => '描述內容格式2~60個字符',
+            'form_item_apply_version'               => '適用系統版本',
+            'form_item_apply_version_message'       => '至少選擇一個適用系統版本',
         ],
         // 支付请求日志
         'payrequestlog'             => [
@@ -3039,6 +3063,7 @@ return [
             'save_admin_info_error_tips'            => '當前操作管理員資訊有誤',
             'save_user_already_exist_tips'          => '用戶已存在[{$var}]',
             'save_gender_range_error_tips'          => '性別值範圍不正確',
+            'login_verify_auto_register_close_tips' => '帳號不存在，請先註冊或聯繫管理員開啟驗證碼登入自動註冊',
             'save_status_range_error_tips'          => '狀態值範圍不正確',
             'save_user_info_no_exist_tips'          => '用戶資訊不存在',
             'save_nickname_format_error_tips'       => '昵稱1~60個字之間',
@@ -4130,6 +4155,11 @@ return [
             'desc' => '默認關閉，可以防止非法登入',
             'tips' => '請選擇是否開啟登入圖片驗證碼',
         ],
+        'home_user_login_verify_auto_register'  => [
+            'name' => '驗證碼登入自動註冊',
+            'desc' => '開啟後，手機或郵箱驗證碼登入時用戶不存在則自動註冊並登入',
+            'tips' => '請選擇是否開啟驗證碼登入自動註冊',
+        ],
         'home_site_user_forgetpwd_ad1_images'  => [
             'name' => '圖片',
             'desc' => '圖片1 [建議450*350px]',
@@ -4217,7 +4247,7 @@ return [
         ],
         'common_user_is_mandatory_bind_mobile'  => [
             'name' => '強制綁定手機',
-            'desc' => '默認否',
+            'desc' => '',
             'tips' => '請選擇是否強制綁定手機',
         ],
         'common_app_is_header_nav_fixed'  => [
@@ -4326,8 +4356,18 @@ return [
         ],
         'common_app_is_head_vice_nav'  => [
             'name' => '是否啟用用戶中心頭部小導航',
-            'desc' => '默認是',
+            'desc' => '',
             'tips' => '請選擇是否啟用用戶中心頭部小導航',
+        ],
+        'common_is_share_use_image'  => [
+            'name' => '分享轉發使用默認圖片',
+            'desc' => '',
+            'tips' => '請選擇分享及轉發是否使用頁面設置的默認圖片及系統默認圖片',
+        ],
+        'common_user_center_nav_show_model_type'  => [
+            'name' => '用戶中心菜單展示模式',
+            'desc' => '',
+            'tips' => '請選擇用戶中心菜單展示模式',
         ],
         'common_app_is_weixin_force_user_base'  => [
             'name' => '微信小程式強制填寫基礎資訊',
@@ -4458,6 +4498,21 @@ return [
             'name' => '分類展示層級',
             'desc' => '默認分類+商品',
             'tips' => '請選擇分類展示層級',
+        ],
+        'common_goods_category_model_icon_type'  => [
+            'name' => '商品列表模式一級分類圖標',
+            'desc' => '僅手機端商品列表模式有效',
+            'tips' => '請選擇商品列表模式一級分類圖標類型',
+        ],
+        'common_goods_category_is_search_alone'  => [
+            'name' => '搜索進入獨立搜索頁',
+            'desc' => '僅手機端有效',
+            'tips' => '請選擇商品分類搜索是否進入獨立搜索頁',
+        ],
+        'common_goods_category_is_show_cart_nav'  => [
+            'name' => '開啟購物車導航',
+            'desc' => '僅手機端商品列表模式有效',
+            'tips' => '請選擇商品分類頁是否開啟購物車導航',
         ],
         'common_cdn_attachment_host'  => [
             'name' => '附件cdn功能變數名稱',
@@ -4725,6 +4780,16 @@ return [
             'name' => '商品封面高度拉伸（手機端）',
             'desc' => '默認正方形',
             'tips' => '請選擇商品封面高度拉伸（手機端）',
+        ],
+        'common_goods_detail_bottom_opt_cart'  => [
+            'name' => '商品詳情頁底部導航開啟購物車（手機端）',
+            'desc' => '',
+            'tips' => '請選擇商品詳情頁底部導航是否開啟購物車',
+        ],
+        'common_goods_list_show_cart_opt'  => [
+            'name' => '商品列表展示購物車（手機端）',
+            'desc' => '',
+            'tips' => '請選擇商品列表是否展示購物車',
         ],
         'common_goods_close_buy_button'  => [
             'name' => '關閉商品下單按鈕',

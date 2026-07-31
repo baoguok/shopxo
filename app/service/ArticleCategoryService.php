@@ -32,8 +32,8 @@ class ArticleCategoryService
      */
     public static function ArticleCategoryList($params = [])
     {
-        $field = empty($params['field']) ? '*' : $params['field'];
-        $order_by = empty($params['order_by']) ? 'sort asc' : trim($params['order_by']);
+        $field = ResourcesService::DbFieldSafeHandle($params['field'] ?? '*', 'ArticleCategory');
+        $order_by = empty($params['order_by']) ? 'sort asc' : ResourcesService::DbOrderBySafeHandle($params['order_by'], 'ArticleCategory', 'sort asc');
         $data = Db::name('ArticleCategory')->where(['is_enable'=>1])->field($field)->order($order_by)->select()->toArray();
         return DataReturn(MyLang('handle_success'), 0, self::CategoryDataHandle($data, $params));
     }

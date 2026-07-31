@@ -6,7 +6,21 @@
         </div>
         <div class="am-popup-bd">
             <form class="am-form pay-form am-form-popup-fixed" method="post" action="{{:MyUrl('index/order/pay')}}">
-                <div class="business-list business-list-nbfc">
+                <!-- 订单支付弹窗支付方式顶部钩子-开始 -->
+                {{if isset($shopxo_is_develop) and $shopxo_is_develop eq true}}
+                    <div class="plugins-tag">
+                        <span>plugins_view_order_payment_popup_top</span>
+                    </div>
+                {{/if}}
+                {{if !empty($plugins_view_order_payment_popup_top_data) and is_array($plugins_view_order_payment_popup_top_data)}}
+                    {{foreach $plugins_view_order_payment_popup_top_data as $hook}}
+                        {{if is_string($hook) or is_int($hook)}}
+                            {{$hook|raw}}
+                        {{/if}}
+                    {{/foreach}}
+                {{/if}}
+                <!-- 订单支付弹窗支付方式顶部钩子-结束 -->
+                <div class="business-list business-list-nbfc friendpay-self-payment-panel">
                     {{if !empty($buy_payment_list)}}
                         <ul class="am-avg-sm-2 am-avg-md-3 payment-list" data-type="payment">
                             {{foreach $buy_payment_list as $payment}}
@@ -31,6 +45,20 @@
                         </div>
                     {{/if}}
                 </div>
+                <!-- 订单支付弹窗支付方式底部钩子-开始 -->
+                {{if isset($shopxo_is_develop) and $shopxo_is_develop eq true}}
+                    <div class="plugins-tag">
+                        <span>plugins_view_order_payment_popup_bottom</span>
+                    </div>
+                {{/if}}
+                {{if !empty($plugins_view_order_payment_popup_bottom_data) and is_array($plugins_view_order_payment_popup_bottom_data)}}
+                    {{foreach $plugins_view_order_payment_popup_bottom_data as $hook}}
+                        {{if is_string($hook) or is_int($hook)}}
+                            {{$hook|raw}}
+                        {{/if}}
+                    {{/foreach}}
+                {{/if}}
+                <!-- 订单支付弹窗支付方式底部钩子-结束 -->
                 <div class="am-form-popup-submit">
                     <input type="hidden" name="ids" value="{{if !empty($pay_params['order_ids'])}}{{$pay_params.order_ids}}{{/if}}" />
                     <input type="hidden" name="payment_id" value="{{if !empty($pay_params['payment_id'])}}{{$pay_params.payment_id}}{{/if}}" />

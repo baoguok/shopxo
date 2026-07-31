@@ -6,6 +6,27 @@
     {{else /}}
         <!-- form start -->
         <form class="am-form form-validation am-form-full-screen am-form-popup-fixed" action="{{:MyUrl('admin/order/delivery')}}" method="POST" request-type="ajax-reload" request-value="parent">
+            <!-- 发货页面顶部钩子 -->
+            {{if isset($shopxo_is_develop) and $shopxo_is_develop eq true}}
+                <div class="plugins-tag">
+                    <span>plugins_view_admin_order_delivery_top</span>
+                </div>
+            {{/if}}
+            {{php}}
+                $hook_name = 'plugins_view_admin_order_delivery_top';
+                $hook_data = MyEventTrigger($hook_name, ['hook_name'=>$hook_name, 'is_backend'=>true, 'data'=>empty($data)?[]:$data]);
+                if(!empty($hook_data) && is_array($hook_data))
+                {
+                    foreach($hook_data as $hook)
+                    {
+                        if(is_string($hook) || is_int($hook))
+                        {
+                            echo htmlspecialchars_decode($hook);
+                        }
+                    }
+                }
+            {{/php}}
+
             <div class="am-form-group express-list">
                 <ul class="am-list am-list-static am-list-border am-list-striped am-margin-bottom-0 am-radius am-nbfc">
                     {{if !empty($data['express_data']) and is_array($data['express_data'])}}
@@ -26,6 +47,27 @@
                     </button>
                 </div>
             </div>
+
+            <!-- 发货页面底部钩子 -->
+            {{if isset($shopxo_is_develop) and $shopxo_is_develop eq true}}
+                <div class="plugins-tag">
+                    <span>plugins_view_admin_order_delivery_bottom</span>
+                </div>
+            {{/if}}
+            {{php}}
+                $hook_name = 'plugins_view_admin_order_delivery_bottom';
+                $hook_data = MyEventTrigger($hook_name, ['hook_name'=>$hook_name, 'is_backend'=>true, 'data'=>empty($data)?[]:$data]);
+                if(!empty($hook_data) && is_array($hook_data))
+                {
+                    foreach($hook_data as $hook)
+                    {
+                        if(is_string($hook) || is_int($hook))
+                        {
+                            echo htmlspecialchars_decode($hook);
+                        }
+                    }
+                }
+            {{/php}}
 
             <div class="am-form-popup-submit">
                 <input type="hidden" name="id" value="{{$data.id}}"/>

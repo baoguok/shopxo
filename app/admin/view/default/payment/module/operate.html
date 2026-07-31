@@ -34,3 +34,17 @@
         </button>
     {{/if}}
 {{/if}}
+{{if isset($shopxo_is_develop) and $shopxo_is_develop eq true}}
+    {{if AdminIsPower('payment', 'storeuploadinfo')}}
+        <button type="button" class="am-btn am-btn-default am-btn-xs am-radius am-btn-block submit-popup" data-url="{{:MyUrl('admin/payment/storeuploadinfo', ['id'=>$module_data['payment']])}}" data-title="{{:MyLang('upload_title')}}">
+            <i class="am-icon-upload"></i>
+            <span>{{:MyLang('upload_title')}}</span>
+        </button>
+    {{/if}}
+    {{if AdminIsPower('payment', 'download')}}
+        <a class="am-btn am-btn-success am-btn-xs am-radius am-btn-block" href="{{:MyUrl('admin/payment/download', ['id'=>$module_data['payment']])}}" target="_blank" rel="noopener noreferrer">
+            <i class="am-icon-download"></i>
+            <span>{{:MyLang('download_title')}}</span>
+        </a>
+    {{/if}}
+{{/if}}

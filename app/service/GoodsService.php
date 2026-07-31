@@ -1715,7 +1715,9 @@ class GoodsService
         ]);
 
         // 返回信息
-        return DataReturn(MyLang('operate_success'), 0);
+        return DataReturn(MyLang('operate_success'), 0, [
+            'goods_id' => $goods_id,
+        ]);
     }
 
     /**
@@ -3444,7 +3446,7 @@ class GoodsService
     public static function GoodsDetailMiddleTabsNavList($goods)
     {
         // 从缓存获取
-        $key = SystemService::CacheKey('shopxo.cache_goods_detail_middle_tabs_key').APPLICATION;
+        $key = SystemService::CacheKey('shopxo.cache_goods_detail_middle_tabs_key').APPLICATION.$goods['id'];
         $data = MyCache($key);
         if($data === null || MyEnv('app_debug') || MyC('common_data_is_use_cache') != 1)
         {
@@ -3589,7 +3591,7 @@ class GoodsService
             foreach($platform as $v)
             {
                 // 存储信息
-                $path = 'download'.DS.'goods_qrcode'.DS.APPLICATION_CLIENT_TYPE.DS.$v['value'].DS.$time_dir.DS;
+                $path = 'download'.DS.'goods_qrcode'.DS.$v['value'].DS.$time_dir.DS;
                 // 二维码处理参数
                 $dir_params = [
                     'path'      => DS.$path,

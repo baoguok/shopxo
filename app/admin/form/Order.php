@@ -350,7 +350,7 @@ class Order
                     'label'         => $lang['take'],
                     'view_type'     => 'module',
                     'view_key'      => 'order/module/take',
-                    'width'         => 130,
+                    'grid_size'     => 'sm',
                     'is_detail'     => 0,
                     'search_config' => [
                         'form_type'             => 'input',

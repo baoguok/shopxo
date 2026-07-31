@@ -670,7 +670,7 @@ class SearchService
         }
 
         // 排序
-        $order_by = 'g.sort_level desc, g.access_count desc, g.sales_count desc, g.id desc';
+        $order_by = 'g.inventory desc, g.sort_level desc, g.access_count desc, g.sales_count desc, g.id desc';
         if(!empty($params['ov']))
         {
             // 数据库字段映射关系
@@ -1312,7 +1312,18 @@ class SearchService
                 ['inventory', '>', 0],
             ];
             $field = 'id,title,images';
-            $goods = Db::name('Goods')->where($where)->field($field)->order('sales_count desc')->limit(0, 10)->select()->toArray();
+            $order_by = 'sales_count desc';
+            // 搜索排行榜商品销量读取前钩子
+            $hook_name = 'plugins_service_search_ranking_goods_sales_begin';
+            MyEventTrigger($hook_name, [
+                'hook_name'     => $hook_name,
+                'is_backend'    => true,
+                'params'        => $params,
+                'where'         => &$where,
+                'field'         => &$field,
+                'order_by'      => &$order_by,
+            ]);
+            $goods = Db::name('Goods')->where($where)->field($field)->order($order_by)->limit(0, 10)->select()->toArray();
             if(!empty($goods))
             {
                 $data[] = [
@@ -1330,7 +1341,18 @@ class SearchService
                 ['gc.business_type', '=', 'order'],
             ];
             $field = 'g.id,g.title,g.images,AVG(gc.rating) AS avg_rating';
-            $goods = Db::name('GoodsComments')->alias('gc')->join('goods g', 'g.id=gc.goods_id')->where($where)->field($field)->order('avg_rating desc')->group('g.id')->limit(0, 10)->select()->toArray();
+            $order_by = 'avg_rating desc';
+            // 搜索排行榜商品评分读取前钩子
+            $hook_name = 'plugins_service_search_ranking_goods_star_begin';
+            MyEventTrigger($hook_name, [
+                'hook_name'     => $hook_name,
+                'is_backend'    => true,
+                'params'        => $params,
+                'where'         => &$where,
+                'field'         => &$field,
+                'order_by'      => &$order_by,
+            ]);
+            $goods = Db::name('GoodsComments')->alias('gc')->join('goods g', 'g.id=gc.goods_id')->where($where)->field($field)->order($order_by)->group('g.id')->limit(0, 10)->select()->toArray();
             if(!empty($goods))
             {
                 $data[] = [
@@ -1347,7 +1369,18 @@ class SearchService
                 ['g.inventory', '>', 0],
             ];
             $field = 'g.id,g.title,g.images,COUNT(g.id) AS count';
-            $goods = Db::name('GoodsFavor')->alias('gf')->join('goods g', 'g.id=gf.goods_id')->where($where)->field($field)->order('count desc')->group('g.id')->limit(0, 10)->select()->toArray();
+            $order_by = 'count desc';
+            // 搜索排行榜商品收藏读取前钩子
+            $hook_name = 'plugins_service_search_ranking_goods_favor_begin';
+            MyEventTrigger($hook_name, [
+                'hook_name'     => $hook_name,
+                'is_backend'    => true,
+                'params'        => $params,
+                'where'         => &$where,
+                'field'         => &$field,
+                'order_by'      => &$order_by,
+            ]);
+            $goods = Db::name('GoodsFavor')->alias('gf')->join('goods g', 'g.id=gf.goods_id')->where($where)->field($field)->order($order_by)->group('g.id')->limit(0, 10)->select()->toArray();
             if(!empty($goods))
             {
                 $data[] = [
