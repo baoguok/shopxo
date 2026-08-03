@@ -216,7 +216,7 @@ class Excel
 		// 2、行与行之间需要换行符
 		// 3、英文逗号替换未中文逗号、避免与csv分隔符冲突
 	    $csv_title = implode(',', array_map(function($v) {
-	    	return str_replace([',', "\n"], ['，', ''], $v['name']);
+	    	return str_replace([',', "\n", "\r", "\t"], [ '，', '', '', ''], $v['name']);
 	    }, $this->title));
 	    $csv_content = (($excel_charset == 0) ? $csv_title : mb_convert_encoding($csv_title, $charset, 'utf-8'))."\n";
 		foreach($this->data as $v)
@@ -225,7 +225,7 @@ class Excel
 			$index = 0;
 			foreach($this->title as $tk=>$tv)
 			{
-				$temp .= ($index == 0 ? '' : ',').((array_key_exists($tk, $v) && !is_array($v[$tk]) && !empty($v[$tk])) ? str_replace([',', "\n"], [ '，', ''], $v[$tk]) : '')."\t";
+				$temp .= ($index == 0 ? '' : ',').((array_key_exists($tk, $v) && !is_array($v[$tk]) && !empty($v[$tk])) ? str_replace([',', "\n", "\r", "\t"], [ '，', '', '', ''], $v[$tk]) : '')."\t";
 				$index++;
 			}
 			$csv_content .= (($excel_charset == 0) ? $temp : mb_convert_encoding($temp, $charset, 'utf-8'))."\n";
@@ -255,23 +255,12 @@ class Excel
 		if(!empty($this->title) && is_array($this->title))
 		{
 			$count = count($this->title);
-			for($i='A',$k=0; $i<='Z'; $i++, $k++)
+			for($i = 1; $i <= $count; $i++)
 			{
-			    if($k == $count)
-			    {
-			        break;
-			    }
-
-			    // 最后一个取消逗号
-			    if($k == ($count-1))
-			    {
-			        $letter_str .= $i;
-			    } else {
-			        $letter_str .= $i.',';
-			    }
+				$letter_str .= ($i == 1 ? '' : ',').\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
 			}
 		}
-		return explode(',', $letter_str);
+		return empty($letter_str) ? [] : explode(',', $letter_str);
 	}
 
 	/**

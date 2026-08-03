@@ -16,7 +16,7 @@ use app\service\OrderService;
 use app\service\PayLogService;
 use app\service\PayRequestLogService;
 use app\plugins\wallet\service\WalletService;
-use app\plugins\scanpay\service\ScanpayLogService;
+use app\plugins\scanpay\service\PayService as ScanpayPayService;
 use app\plugins\vip\service\PayService as LevelPayService;
 use app\plugins\givegift\service\PayService as GiftPayService;
 use app\plugins\presale\service\PayService as PresalePayService;
@@ -61,7 +61,7 @@ class WalletPay
         // 基础信息
         $base = [
             'name'          => '钱包支付',  // 插件名称
-            'version'       => '0.0.5',  // 插件版本
+            'version'       => '0.0.6',  // 插件版本
             'apply_version' => '不限',  // 适用系统版本描述
             'desc'          => '钱包余额支付',  // 插件描述（支持html）
             'author'        => 'Devil',  // 开发者
@@ -240,7 +240,7 @@ class WalletPay
                     // 扫码收款
                     case 'plugins-scanpay' :
                         $parameter['order'] = $parameter['order'][0];
-                        $ret = ScanpayLogService::ScanpayLogHandle($parameter);
+                        $ret = ScanpayPayService::Handle($parameter);
                         if($ret['code'] == 0)
                         {
                             $ret = DataReturn('支付成功', 0, PluginsHomeUrl('scanpay', 'index', 'respond'));

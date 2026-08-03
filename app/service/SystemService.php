@@ -150,11 +150,11 @@ class SystemService
         // 取默认值
         $value = SYSTEM_TYPE;
 
-        // 默认值则判断是否参数存在值
+        // 默认值则判断是否参数存在值（仅允许安全字符，防支付入口文件注入）
         if($value == 'default')
         {
             $system_type = MyInput('system_type');
-            if(!empty($system_type))
+            if(!empty($system_type) && self::SystemTypeValueIsLegal($system_type))
             {
                 $value = $system_type;
             }
@@ -168,7 +168,31 @@ class SystemService
             'value'         => &$value,
         ]);
 
+        // 钩子后再次校验，非法则回退
+        if(!self::SystemTypeValueIsLegal($value))
+        {
+            $value = defined('SYSTEM_TYPE') ? SYSTEM_TYPE : 'default';
+            if(!self::SystemTypeValueIsLegal($value))
+            {
+                $value = 'default';
+            }
+        }
+
         return $value;
+    }
+
+    /**
+     * 系统类型标识是否合法（仅字母数字下划线中划线）
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-07-27
+     * @desc    用于支付入口文件名/源码拼接，禁止注入字符
+     * @param   [mixed]          $value [系统类型]
+     */
+    public static function SystemTypeValueIsLegal($value)
+    {
+        return is_string($value) && $value !== '' && preg_match('/^[a-zA-Z0-9_-]+$/', $value) === 1;
     }
 
     /**
@@ -222,8 +246,6 @@ class SystemService
                 {
                     $site_domain_url .= DS;
                 }
-            } else {
-                $site_domain_url = '/pages/index/index';
             }
         }
         return $site_domain_url;

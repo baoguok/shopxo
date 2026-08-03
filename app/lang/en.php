@@ -1048,7 +1048,7 @@ return [
     // 所属平台
     'common_platform_type' => [
         'pc'        => 'PC website',
-        'h5'        => 'H5 mobile website',
+        'h5'        => 'H5 mobile',
         'ios'       => 'Apple App',
         'android'   => 'Android App',
         'weixin'    => 'Wechat applet',
@@ -1057,11 +1057,13 @@ return [
         'toutiao'   => 'Headline applet',
         'qq'        => 'QQ applet',
         'kuaishou'  => 'Kwai applet',
+        'harmony'   => 'HarmonyOS App',
     ],
     // app平台
     'common_app_type' => [
         'ios'       => 'Apple App',
         'android'   => 'Android App',
+        'harmony'   => 'HarmonyOS App',
     ],
     // 小程序平台
     'common_appmini_type' => [
@@ -1369,6 +1371,17 @@ return [
         1 => 'OneLevelCategory',
         2 => 'TwoLevelCategory',
         3 => 'ThreeLevelCategory',
+    ],
+    // 商品分类页面商品列表模式一级分类图标类型
+    'common_goods_category_model_icon_type_list' => [
+        0 => 'Realistic image',
+        1 => 'Icon',
+        2 => 'Large image',
+    ],
+    // 用户中心菜单展示模式
+    'common_user_center_nav_show_model_type_list' => [
+        0 => 'Grid',
+        1 => 'List',
     ],
     // 图片验证码类型
     'common_site_images_verify_rand_type_list' => [
@@ -2550,6 +2563,8 @@ return [
             'take_extraction_code_message'          => 'Wrong pickup code',
             'take_extraction_code_empty_tips'       => 'The order pickup code does not exist. Please contact the administrator',
             'take_extraction_code_error_tips'       => 'Incorrect pickup code',
+            'take_extraction_code_finish_tips'      => 'This product pickup code has been fully redeemed',
+            'take_extraction_code_number_error_tips'=> 'Invalid redeem quantity, remaining redeemable times',
             'order_delivery_message_data'           => [
                 'title'  => 'Order shipment',
                 'desc'   => 'Order shipped',
@@ -2630,6 +2645,15 @@ return [
             'pay_respond_file_no_exist_tips'        => 'The payment return entry file does not exist. Please contact the administrator for processing',
             'pay_notify_file_no_exist_tips'         => 'The payment notification entry file does not exist. Please contact the administrator for processing',
             'not_install_weixin_payment_tips'       => 'Please install the [WeChat APP Mini Program Payment] payment plugin first',
+            'payment_identification_error_tips'     => 'Payment method identification error',
+            'payment_file_no_exist_tips'              => 'Payment method file does not exist',
+            'form_item_version'                     => 'Version',
+            'form_item_version_tips'                => 'Major version.Minor version.Revision number, each segment should not exceed 6 digits, such as 1.0.0',
+            'form_item_version_message'             => 'Version format error',
+            'form_item_desc'                        => 'Description',
+            'form_item_desc_message'                => 'Description format 2~60 characters',
+            'form_item_apply_version'               => 'Applicable system version',
+            'form_item_apply_version_message'       => 'Select at least one applicable system version',
         ],
         // 支付请求日志
         'payrequestlog'             => [
@@ -3035,6 +3059,7 @@ return [
             'save_admin_info_error_tips'            => 'The current operation administrator information is incorrect',
             'save_user_already_exist_tips'          => 'User already exists[{$var}]',
             'save_gender_range_error_tips'          => 'The gender value range is incorrect',
+            'login_verify_auto_register_close_tips' => 'Account does not exist, please register first or enable auto register on verification code login',
             'save_status_range_error_tips'          => 'The status value range is incorrect',
             'save_user_info_no_exist_tips'          => 'User information does not exist',
             'save_nickname_format_error_tips'       => 'Nickname is between 2 and 16 characters',
@@ -4145,6 +4170,11 @@ return [
             'desc' => 'Background color 3',
             'tips' => '',
         ],
+        'home_user_login_verify_auto_register'  => [
+            'name' => 'Auto register on verification code login',
+            'desc' => 'When enabled, SMS or email verification code login will auto register if the user does not exist',
+            'tips' => 'Please select whether to enable auto register on verification code login',
+        ],
         'home_user_login_img_verify_state'  => [
             'name' => 'Login picture verification code',
             'desc' => 'Off by default, which can prevent illegal login',
@@ -4247,7 +4277,7 @@ return [
         ],
         'common_user_is_mandatory_bind_mobile'  => [
             'name' => 'Force phone binding',
-            'desc' => 'Default no',
+            'desc' => '',
             'tips' => 'Please select whether to bind the phone forcibly',
         ],
         'common_app_is_header_nav_fixed'  => [
@@ -4356,8 +4386,18 @@ return [
         ],
         'common_app_is_head_vice_nav'  => [
             'name' => 'Enable small navigation of user center head',
-            'desc' => 'Default is',
+            'desc' => '',
             'tips' => 'Please select whether to enable small navigation of user center head',
+        ],
+        'common_is_share_use_image'  => [
+            'name' => 'Share uses default image',
+            'desc' => '',
+            'tips' => 'Please select whether share and forward use page default image and system default image',
+        ],
+        'common_user_center_nav_show_model_type'  => [
+            'name' => 'User center menu display mode',
+            'desc' => '',
+            'tips' => 'Please select user center menu display mode',
         ],
         'common_app_is_weixin_force_user_base'  => [
             'name' => 'WeChat mini program forces basic information to be filled in',
@@ -4488,6 +4528,21 @@ return [
             'name' => 'Classification display level',
             'desc' => 'Default Category+Goods',
             'tips' => 'Please select a classification display level',
+        ],
+        'common_goods_category_model_icon_type'  => [
+            'name' => 'First-level category icon in goods list mode',
+            'desc' => 'Mobile app goods list mode only',
+            'tips' => 'Please select first-level category icon type in goods list mode',
+        ],
+        'common_goods_category_is_search_alone'  => [
+            'name' => 'Search opens independent search page',
+            'desc' => 'Mobile app only',
+            'tips' => 'Please select whether category search opens independent search page',
+        ],
+        'common_goods_category_is_show_cart_nav'  => [
+            'name' => 'Enable cart navigation',
+            'desc' => 'Mobile app goods list mode only',
+            'tips' => 'Please select whether to enable cart navigation on category page',
         ],
         'common_cdn_attachment_host'  => [
             'name' => 'Attachment CDN domain name',
@@ -4757,6 +4812,16 @@ return [
             'name' => 'Product cover height stretching (mobile end)',
             'desc' => 'Default Square',
             'tips' => 'Please select product cover height stretch (mobile end)',
+        ],
+        'common_goods_detail_bottom_opt_cart'  => [
+            'name' => 'Enable cart in goods detail bottom nav (mobile)',
+            'desc' => '',
+            'tips' => 'Please select whether to enable cart in goods detail bottom navigation',
+        ],
+        'common_goods_list_show_cart_opt'  => [
+            'name' => 'Show cart in goods list (mobile)',
+            'desc' => '',
+            'tips' => 'Please select whether to show cart in goods list',
         ],
         'common_goods_close_buy_button'  => [
             'name' => 'Close the product order button',

@@ -243,6 +243,35 @@ class OrderService
             }
         }
 
+        // 支付权限校验（默认仅订单所属用户可支付，插件可扩展代付等场景）
+        $pay_power = [
+            'is_check_owner'    => true,
+            'error_msg'         => MyLang('illegal_access_tips'),
+        ];
+        $hook_name = 'plugins_service_order_pay_power_handle';
+        $ret = EventReturnHandle(MyEventTrigger($hook_name, [
+            'hook_name'     => $hook_name,
+            'is_backend'    => true,
+            'params'        => &$params,
+            'order_data'    => $order_data,
+            'user'          => $current_user,
+            'pay_power'     => &$pay_power,
+        ]));
+        if(isset($ret['code']) && $ret['code'] != 0)
+        {
+            return $ret;
+        }
+        if(!empty($pay_power['is_check_owner']) && !empty($current_user))
+        {
+            foreach($order_data as $order)
+            {
+                if($order['user_id'] != $current_user['id'])
+                {
+                    return DataReturn(empty($pay_power['error_msg']) ? MyLang('illegal_access_tips') : $pay_power['error_msg'], -1);
+                }
+            }
+        }
+
         // 发起支付前处理钩子
         $hook_name = 'plugins_service_order_pay_launch_begin';
         $ret = EventReturnHandle(MyEventTrigger($hook_name, [
@@ -576,6 +605,8 @@ class OrderService
                         'buyer_user'    => $params['user']['user_name_view'],
                         'pay_price'     => $params['order']['total_price'],
                     ],
+                    // 透传原始请求参数（供挂账等插件使用）
+                    'params'        => empty($params['params']) ? [] : $params['params'],
                 ];
                 return self::OrderPayHandle($pay_params);
             }
@@ -1676,8 +1707,9 @@ class OrderService
                 // 删除
                 $result['is_delete']    = (in_array($data['status'], [5,6]) && isset($data['is_delete_time']) && $data['is_delete_time'] == 0) ? 1 : 0;
 
-                // 是否需要先追溯再【发货、取货、服务】
-                if($result['is_delivery']+$result['is_service']+$result['is_take'] > 0 && $result['is_tracesource'] == 1)
+                // 指定品类才需追溯；匹配品类且未追溯时，先追溯再【发货、取货、服务】
+                // 注意：即使发货/取货/服务已不可用（如已发货 status=3），也要按品类决定是否展示追溯按钮，避免弹窗空白
+                if($result['is_tracesource'] == 1)
                 {
                     // 获取指导品类id、静态记录避免重复读取分类id数据
                     static $order_service_config_order_operate_data_trace_source_goods_category_ids = null;
@@ -1702,7 +1734,7 @@ class OrderService
                         if($count > 0)
                         {
                             // 不存在追溯数据则不能【发货、取货、服务】
-                            if(Db::name('OrderTraceSource')->where(['order_id'=>$order_id])->count() <= 0)
+                            if($result['is_delivery']+$result['is_service']+$result['is_take'] > 0 && Db::name('OrderTraceSource')->where(['order_id'=>$order_id])->count() <= 0)
                             {
                                 $result['is_delivery']  = 0;
                                 $result['is_service']   = 0;
@@ -1972,30 +2004,75 @@ class OrderService
         // 必须返回的内容格式
         $result = [];
 
-        // 获取取货码
-        $data = Db::name('OrderExtractionCode')->where(['order_id'=>array_unique($order_ids)])->column('code', 'order_id');
+        // 获取取货码（按商品明细）
+        $data = Db::name('OrderExtractionCode')->where(['order_id'=>array_unique($order_ids)])->order('id asc')->select()->toArray();
         if(!empty($data) && is_array($data))
         {
-            foreach($order_ids as $v)
-            {
-                $images = '';
-                if(array_key_exists($v, $data))
-                {
-                    // 生成二维码参数
-                    $params = [
-                        'content'   => $data[$v],
-                        'path'      => DS.'download'.DS.'order'.DS.'extraction_code'.DS,
-                        'filename'  => $v.'.png',
-                    ];
+            // 订单商品明细
+            $detail_ids = array_unique(array_filter(array_column($data, 'order_detail_id')));
+            $detail_group = empty($detail_ids) ? [] : Db::name('OrderDetail')->where(['id'=>$detail_ids])->column('id,goods_id,title,images,buy_number', 'id');
 
-                    // 图片不存在则去生成二维码图片并保存至目录
-                    $ret = (new \base\Qrcode())->Create($params);
-                    $images = ($ret['code'] == 0) ? $ret['data']['url'] : '';
+            $group = [];
+            foreach($data as $v)
+            {
+                if(!array_key_exists($v['order_id'], $group))
+                {
+                    $group[$v['order_id']] = [];
                 }
-                $result[$v] = [
-                    'code'      => isset($data[$v]) ? $data[$v] : '',
-                    'images'    => $images,
+
+                $detail = (!empty($detail_group) && array_key_exists($v['order_detail_id'], $detail_group)) ? $detail_group[$v['order_detail_id']] : [];
+                $total_number = max(1, intval($v['total_number']));
+                $verify_number = max(0, intval($v['verify_number']));
+                $remain_number = max(0, $total_number - $verify_number);
+                $goods_id = empty($detail['goods_id']) ? 0 : intval($detail['goods_id']);
+
+                // 生成二维码参数
+                $qrcode_params = [
+                    'content'   => $v['code'],
+                    'path'      => DS.'download'.DS.'order'.DS.'extraction_code'.DS,
+                    'filename'  => $v['order_id'].'_'.$v['order_detail_id'].'.png',
                 ];
+                $ret = (new \base\Qrcode())->Create($qrcode_params);
+                $images = ($ret['code'] == 0) ? $ret['data']['url'] : '';
+
+                $group[$v['order_id']][] = [
+                    'id'                => $v['id'],
+                    'order_id'          => $v['order_id'],
+                    'order_detail_id'   => $v['order_detail_id'],
+                    'code'              => $v['code'],
+                    'total_number'      => $total_number,
+                    'verify_number'     => $verify_number,
+                    'remain_number'     => $remain_number,
+                    'is_finish'         => ($remain_number <= 0) ? 1 : 0,
+                    'images'            => $images,
+                    'goods_id'          => $goods_id,
+                    'goods_url'         => empty($goods_id) ? '' : GoodsService::GoodsUrlCreate($goods_id),
+                    'goods_title'       => empty($detail['title']) ? '' : $detail['title'],
+                    'goods_images'      => empty($detail['images']) ? '' : ResourcesService::AttachmentPathViewHandle($detail['images']),
+                    'buy_number'        => empty($detail['buy_number']) ? $total_number : intval($detail['buy_number']),
+                ];
+            }
+
+            foreach($order_ids as $oid)
+            {
+                if(!empty($group[$oid]))
+                {
+                    // 优先展示未核完的商品码，否则取第一个
+                    $default = $group[$oid][0];
+                    foreach($group[$oid] as $item)
+                    {
+                        if($item['is_finish'] != 1)
+                        {
+                            $default = $item;
+                            break;
+                        }
+                    }
+                    $result[$oid] = [
+                        'items'   => $group[$oid],
+                        'code'    => $default['code'],
+                        'images'  => $default['images'],
+                    ];
+                }
             }
         }
 
@@ -2583,7 +2660,7 @@ class OrderService
                     }
                     break;
 
-                // 自提模式 - 验证取货码
+                // 自提模式 - 验证取货码（按商品码核销，数量次可核）
                 case 2 :
                     $p = [
                         [
@@ -2598,15 +2675,65 @@ class OrderService
                         throw new \Exception($ret);
                     }
 
-                    // 校验
-                    $extraction_code = Db::name('OrderExtractionCode')->where(['order_id'=>$order['id']])->value('code');
-                    if(empty($extraction_code))
+                    // 核销次数，默认1
+                    $verify_count = empty($params['verify_number']) ? 1 : intval($params['verify_number']);
+                    if($verify_count <= 0)
                     {
-                        throw new \Exception(MyLang('common_service.order.take_extraction_code_empty_tips'));
+                        throw new \Exception(MyLang('common_service.order.take_extraction_code_number_error_tips'));
                     }
-                    if($extraction_code != $params['extraction_code'])
+
+                    // 按取货码匹配商品明细码
+                    $extraction = Db::name('OrderExtractionCode')->where([
+                        'order_id'  => $order['id'],
+                        'code'      => $params['extraction_code'],
+                    ])->find();
+                    if(empty($extraction))
                     {
                         throw new \Exception(MyLang('common_service.order.take_extraction_code_error_tips'));
+                    }
+
+                    $total_number = max(1, intval($extraction['total_number']));
+                    $verify_number = max(0, intval($extraction['verify_number']));
+                    $remain_number = $total_number - $verify_number;
+                    if($remain_number <= 0)
+                    {
+                        throw new \Exception(MyLang('common_service.order.take_extraction_code_finish_tips'));
+                    }
+                    if($verify_count > $remain_number)
+                    {
+                        throw new \Exception(MyLang('common_service.order.take_extraction_code_number_error_tips').'['.$remain_number.']');
+                    }
+
+                    // 累加已核销次数
+                    if(Db::name('OrderExtractionCode')->where(['id'=>$extraction['id']])->update([
+                        'verify_number'  => $verify_number + $verify_count,
+                        'upd_time'       => time(),
+                    ]) === false)
+                    {
+                        throw new \Exception(MyLang('operate_fail'));
+                    }
+
+                    // 取货码核销成功钩子（部分核销不改订单状态，需单独通知进销存等同步进度）
+                    $hook_name = 'plugins_service_order_extraction_verify_success';
+                    MyEventTrigger($hook_name, [
+                        'hook_name'      => $hook_name,
+                        'is_backend'     => true,
+                        'order_id'       => $order['id'],
+                        'extraction_id'  => $extraction['id'],
+                        'verify_number'  => $verify_number + $verify_count,
+                        'params'         => $params,
+                    ]);
+
+                    // 未全部核完则仅记录核销次数，不变更订单状态
+                    $not_finish = Db::name('OrderExtractionCode')->where([
+                        ['order_id', '=', $order['id']],
+                    ])->whereRaw('verify_number < total_number')->count();
+                    if($not_finish > 0)
+                    {
+                        return DataReturn(MyLang('verification_success'), 0, [
+                            'is_finish'      => 0,
+                            'remain_number'  => $remain_number - $verify_count,
+                        ]);
                     }
                     break;
             }

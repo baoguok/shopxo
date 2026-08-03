@@ -36,8 +36,10 @@ class Diy extends Common
     {
         if(!empty($this->data_request['id']))
         {
-            $key = 'api_diy_data_'.intval($this->data_request['id']).'_'.SYSTEM_TYPE.'_'.APPLICATION_CLIENT_TYPE;
-            $result = MyCache($key);
+            $diy_id = intval($this->data_request['id']);
+            $is_dynamic_config = DiyService::DiyConfigHasDynamicParams($diy_id);
+            $key = 'api_diy_data_'.$diy_id.'_'.SYSTEM_TYPE.'_'.APPLICATION_CLIENT_TYPE;
+            $result = $is_dynamic_config ? null : MyCache($key);
             if(empty($result) || (isset($this->data_request['is_cache']) && $this->data_request['is_cache'] == 0))
             {
                 // 获取diy数据
@@ -49,7 +51,7 @@ class Diy extends Common
                 ]);
 
                 // 缓存数据、没有用户登录信息则存储缓存
-                if(empty($this->user))
+                if(empty($this->user) && !$is_dynamic_config)
                 {
                     MyCache($key, $result, 3600);
                 }

@@ -51,96 +51,131 @@ class Goods extends Common
      */
     public function Index()
     {
-        $goods_id = isset($this->data_request['id']) ? $this->data_request['id'] : 0;
-        $params = [
-            'where' => [
-                ['id', '=', $goods_id],
-                ['is_delete_time', '=', 0],
-            ],
-            'is_photo'  => 1,
-            'is_spec'   => 1,
-            'is_params' => 1,
-            'is_favor'  => 1,
-        ];
-        $ret = GoodsService::GoodsList($params);
-        if(!empty($ret['data']) && !empty($ret['data'][0]))
+        $goods_id = isset($this->data_request['id']) ? intval($this->data_request['id']) : 0;
+        if($goods_id <= 0)
         {
-            // 商品信息
-            $goods = $ret['data'][0];
-
-            // 商品评价总数
-            $goods['comments_count'] = GoodsCommentsService::GoodsCommentsTotal(['goods_id'=>$goods_id, 'is_show'=>1]);
-
-            // 商品收藏总数
-            $goods['favor_count'] = GoodsFavorService::GoodsFavorTotal(['goods_id'=>$goods_id]);
-
-            // 模板数据
-            $assign = [
-                // 商品信息
-                'goods'              => $goods,
-                // 商品底部导航左侧小导航
-                'buy_left_nav'       => GoodsService::GoodsBuyLeftNavList($goods),
-                // 商品购买按钮列表
-                'buy_button'         => GoodsService::GoodsBuyButtonList($goods),
-                // 商品购买指向链接数据
-                'buy_to_link'        => GoodsService::GoodsBuyToLinkData($goods),
-                // 中间tabs导航
-                'middle_tabs_nav'    => GoodsService::GoodsDetailMiddleTabsNavList($goods),
-                // 面包屑导航
-                'breadcrumb_data'    => BreadcrumbService::Data('GoodsDetail', ['goods'=>$goods]),
-                // 加载放大镜
-                'is_load_imagezoom'  => 1,
-                // 加载视频播放器组件
-                'is_load_ckplayer'   => 1,
-            ];
-            // 是否商品详情页展示相册
-            $assign['common_is_goods_detail_content_show_photo'] = MyC('common_is_goods_detail_content_show_photo', 0, true);
-
-            // tabs菜单数据处理
-            if(!empty($assign['middle_tabs_nav']) && !empty($assign['middle_tabs_nav']['type']))
-            {
-                // 详情商品评分
-                if(in_array('comments', $assign['middle_tabs_nav']['type']))
-                {
-                    $assign['goods_score'] = GoodsCommentsService::GoodsCommentsScore($goods_id);
-                }
-
-                // 详情tab商品 猜你喜欢
-                if(!empty($assign['middle_tabs_nav']) && in_array('guess_you_like', $assign['middle_tabs_nav']['type']))
-                {
-                    $assign['guess_you_like'] = GoodsService::GoodsDetailGuessYouLikeData($goods['id'], ['is_spec'=>0, 'is_cart'=>0]);
-                }
-            }
-
-            // 左侧商品 看了又看
-            $assign['left_goods'] = GoodsService::GoodsDetailSeeingYouData($goods['id'], ['is_spec'=>0, 'is_cart'=>0]);
-
-            // 商品访问统计
-            GoodsService::GoodsAccessCountInc(['goods_id'=>$goods_id]);
-
-            // 用户商品浏览
-            GoodsBrowseService::GoodsBrowseSave(['goods_id'=>$goods_id, 'user'=>$this->user]);
-
-            // seo
-            $seo_title = empty($goods['seo_title']) ? $goods['title'] : $goods['seo_title'];
-            $assign['home_seo_site_title'] = SeoService::BrowserSeoTitle($seo_title, 2);
-            if(!empty($goods['seo_keywords']))
-            {
-                $assign['home_seo_site_keywords'] = $goods['seo_keywords'];
-            }
-            if(!empty($goods['seo_desc']) || !empty($goods['simple_desc']))
-            {
-                $assign['home_seo_site_description'] = empty($goods['seo_desc']) ? $goods['simple_desc'] : $goods['seo_desc'];
-            }
-
-            // 数据赋值
-            MyViewAssign($assign);
-            // 钩子
-            $this->PluginsHook($goods_id, $goods);
-            return MyView();
+            MyViewAssign('msg', MyLang('goods.goods_no_data_tips'));
+            return MyView('/public/tips_error');
         }
-        MyViewAssign('msg', MyLang('goods.goods_no_data_tips'));
-        return MyView('/public/tips_error');
+
+        $user_id = !empty($this->user) && !empty($this->user['id']) ? intval($this->user['id']) : 0;
+
+        // 获取商品（缓存不含用户收藏状态）
+        $goods = MyCacheRemember('cache_index_goods_detail_goods_'.$goods_id, function() use ($goods_id) {
+            $params = [
+                'where' => [
+                    ['id', '=', $goods_id],
+                    ['is_delete_time', '=', 0],
+                ],
+                'is_photo'  => 1,
+                'is_spec'   => 1,
+                'is_params' => 1,
+                'is_favor'  => 0,
+            ];
+            $ret = GoodsService::GoodsList($params);
+            return (empty($ret['data']) || empty($ret['data'][0])) ? [] : $ret['data'][0];
+        });
+        if(empty($goods))
+        {
+            MyViewAssign('msg', MyLang('goods.goods_no_data_tips'));
+            return MyView('/public/tips_error');
+        }
+
+        // 用户收藏状态（实时）
+        $goods['user_is_favor'] = 0;
+        if($user_id > 0)
+        {
+            $favor = GoodsService::UserFavorGoodsCountData([$goods_id], ['user'=>$this->user]);
+            $goods['user_is_favor'] = (!empty($favor) && in_array($goods_id, $favor)) ? 1 : 0;
+        }
+
+        // 商品评价/收藏统计
+        $goods_stats = MyCacheRemember('cache_index_goods_detail_stats_'.$goods_id, function() use ($goods_id) {
+            return [
+                'comments_count' => GoodsCommentsService::GoodsCommentsTotal(['goods_id'=>$goods_id, 'is_show'=>1]),
+                'favor_count'    => GoodsFavorService::GoodsFavorTotal(['goods_id'=>$goods_id]),
+                'goods_score'    => GoodsCommentsService::GoodsCommentsScore($goods_id),
+            ];
+        });
+        $goods['comments_count'] = $goods_stats['comments_count'];
+        $goods['favor_count'] = $goods_stats['favor_count'];
+
+        // 模板数据
+        $assign = [
+            // 商品信息
+            'goods'              => $goods,
+            // 商品底部导航左侧小导航（仅收藏状态区分，0未收藏/1已收藏）
+            'buy_left_nav'       => MyCacheRemember('cache_index_goods_detail_buy_left_nav_'.$goods_id.'_'.intval($goods['user_is_favor']), function() use ($goods) {
+                return GoodsService::GoodsBuyLeftNavList($goods);
+            }),
+            // 商品购买按钮列表
+            'buy_button'         => MyCacheRemember('cache_index_goods_detail_buy_button_'.$goods_id, function() use ($goods) {
+                return GoodsService::GoodsBuyButtonList($goods);
+            }),
+            // 商品购买指向链接数据
+            'buy_to_link'        => MyCacheRemember('cache_index_goods_detail_buy_to_link_'.$goods_id, function() use ($goods) {
+                return GoodsService::GoodsBuyToLinkData($goods);
+            }),
+            // 中间tabs导航
+            'middle_tabs_nav'    => GoodsService::GoodsDetailMiddleTabsNavList($goods),
+            // 面包屑导航
+            'breadcrumb_data'    => MyCacheRemember('cache_index_goods_detail_breadcrumb_'.$goods_id, function() use ($goods) {
+                return BreadcrumbService::Data('GoodsDetail', ['goods'=>$goods]);
+            }),
+            // 加载放大镜
+            'is_load_imagezoom'  => 1,
+            // 加载视频播放器组件
+            'is_load_ckplayer'   => 1,
+        ];
+        // 是否商品详情页展示相册
+        $assign['common_is_goods_detail_content_show_photo'] = MyC('common_is_goods_detail_content_show_photo', 0, true);
+
+        // tabs菜单数据处理
+        if(!empty($assign['middle_tabs_nav']) && !empty($assign['middle_tabs_nav']['type']))
+        {
+            // 详情商品评分
+            if(in_array('comments', $assign['middle_tabs_nav']['type']))
+            {
+                $assign['goods_score'] = $goods_stats['goods_score'];
+            }
+
+            // 详情tab商品 猜你喜欢
+            if(in_array('guess_you_like', $assign['middle_tabs_nav']['type']))
+            {
+                $assign['guess_you_like'] = MyCacheRemember('cache_index_goods_detail_guess_you_like_'.$goods_id, function() use ($goods_id) {
+                    return GoodsService::GoodsDetailGuessYouLikeData($goods_id, ['is_spec'=>0, 'is_cart'=>0]);
+                });
+            }
+        }
+
+        // 左侧商品 看了又看
+        $assign['left_goods'] = MyCacheRemember('cache_index_goods_detail_seeing_you_'.$goods_id, function() use ($goods_id) {
+            return GoodsService::GoodsDetailSeeingYouData($goods_id, ['is_spec'=>0, 'is_cart'=>0]);
+        });
+
+        // 商品访问统计
+        GoodsService::GoodsAccessCountInc(['goods_id'=>$goods_id]);
+
+        // 用户商品浏览
+        GoodsBrowseService::GoodsBrowseSave(['goods_id'=>$goods_id, 'user'=>$this->user]);
+
+        // seo
+        $seo_title = empty($goods['seo_title']) ? $goods['title'] : $goods['seo_title'];
+        $assign['home_seo_site_title'] = SeoService::BrowserSeoTitle($seo_title, 2);
+        if(!empty($goods['seo_keywords']))
+        {
+            $assign['home_seo_site_keywords'] = $goods['seo_keywords'];
+        }
+        if(!empty($goods['seo_desc']) || !empty($goods['simple_desc']))
+        {
+            $assign['home_seo_site_description'] = empty($goods['seo_desc']) ? $goods['simple_desc'] : $goods['seo_desc'];
+        }
+
+        // 数据赋值
+        MyViewAssign($assign);
+        // 钩子
+        $this->PluginsHook($goods_id, $goods);
+        return MyView();
     }
 
     /**

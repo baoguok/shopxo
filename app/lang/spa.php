@@ -1048,7 +1048,7 @@ return [
     // 所属平台
     'common_platform_type' => [
         'pc'        => 'Sitio web de PC',
-        'h5'        => 'Sitio web móvil h5',
+        'h5'        => 'H5 móvil',
         'ios'       => 'Apple App',
         'android'   => 'Android App',
         'weixin'    => 'Applet de Wechat',
@@ -1057,11 +1057,13 @@ return [
         'toutiao'   => 'Applet de titulares',
         'qq'        => 'Applet QQ',
         'kuaishou'  => 'Applet de mano rápida',
+        'harmony'   => 'App HarmonyOS',
     ],
     // app平台
     'common_app_type' => [
         'ios'       => 'Apple App',
         'android'   => 'Android App',
+        'harmony'   => 'App HarmonyOS',
     ],
     // 小程序平台
     'common_appmini_type' => [
@@ -1369,6 +1371,17 @@ return [
         1 => 'Clasificación de primer nivel',
         2 => 'Clasificación secundaria',
         3 => 'Clasificación de tres niveles',
+    ],
+    // 商品分类页面商品列表模式一级分类图标类型
+    'common_goods_category_model_icon_type_list' => [
+        0 => 'Imagen realista',
+        1 => 'Icono',
+        2 => 'Imagen grande',
+    ],
+    // 用户中心菜单展示模式
+    'common_user_center_nav_show_model_type_list' => [
+        0 => 'Cuadrícula',
+        1 => 'Lista',
     ],
     // 图片验证码类型
     'common_site_images_verify_rand_type_list' => [
@@ -2554,6 +2567,8 @@ return [
             'take_extraction_code_message'          => 'El Código de recogida es incorrecto',
             'take_extraction_code_empty_tips'       => 'El Código de recogida del pedido no existe, Póngase en contacto con el Administrador',
             'take_extraction_code_error_tips'       => 'El Código de recogida no es correcto',
+            'take_extraction_code_finish_tips'      => 'Este código de recogida del producto ya ha sido canjeado por completo',
+            'take_extraction_code_number_error_tips'=> 'Cantidad de canje incorrecta, veces restantes canjeables',
             'order_delivery_message_data'           => [
                 'title'  => 'Envío de pedidos',
                 'desc'   => 'El pedido ha sido enviado',
@@ -2634,6 +2649,15 @@ return [
             'pay_respond_file_no_exist_tips'        => 'El archivo de entrada de retorno de pago no existe, Póngase en contacto con el Administrador para procesarlo',
             'pay_notify_file_no_exist_tips'         => 'El archivo de entrada de notificación de pago no existe, Póngase en contacto con el Administrador para procesarlo',
             'not_install_weixin_payment_tips'       => 'Por favor, instale primero el plug - in de pago [wechat app applet pay]',
+            'payment_identification_error_tips'     => 'Identificación del método de pago incorrecta',
+            'payment_file_no_exist_tips'              => 'El archivo del método de pago no existe',
+            'form_item_version'                     => 'Versión',
+            'form_item_version_tips'                => 'Versión principal.Versión secundaria.Número de revisión, cada segmento no debe exceder 6 dígitos, como 1.0.0',
+            'form_item_version_message'             => 'Error de formato de versión',
+            'form_item_desc'                        => 'Descripción',
+            'form_item_desc_message'                => 'Formato de descripción 2~60 caracteres',
+            'form_item_apply_version'               => 'Versión del sistema aplicable',
+            'form_item_apply_version_message'       => 'Seleccione al menos una versión del sistema aplicable',
         ],
         // 支付请求日志
         'payrequestlog'             => [
@@ -4218,7 +4242,7 @@ return [
         ],
         'common_user_is_mandatory_bind_mobile'  => [
             'name' => 'Obligar a vincular el teléfono',
-            'desc' => 'Predeterminado No',
+            'desc' => '',
             'tips' => 'Por favor, elija si obliga a vincular el teléfono',
         ],
         'common_app_is_header_nav_fixed'  => [
@@ -4327,8 +4351,18 @@ return [
         ],
         'common_app_is_head_vice_nav'  => [
             'name' => '¿ habilitar la navegación pequeña de la cabeza del Centro de usuarios',
-            'desc' => 'El valor predeterminado es',
+            'desc' => '',
             'tips' => 'Por favor, elija Si habilita la navegación pequeña de la cabeza del Centro de usuarios.',
+        ],
+        'common_is_share_use_image'  => [
+            'name' => 'Compartir usa imagen predeterminada',
+            'desc' => '',
+            'tips' => 'Seleccione si compartir y reenviar usan la imagen predeterminada de la página y del sistema',
+        ],
+        'common_user_center_nav_show_model_type'  => [
+            'name' => 'Modo de visualización del menú del centro de usuario',
+            'desc' => '',
+            'tips' => 'Seleccione el modo de visualización del menú del centro de usuario',
         ],
         'common_app_is_weixin_force_user_base'  => [
             'name' => 'El applet de Wechat obliga a rellenar la información básica',
@@ -4459,6 +4493,21 @@ return [
             'name' => 'Nivel de exhibición clasificado',
             'desc' => 'Clasificación predeterminada + mercancía',
             'tips' => 'Por favor, elija el nivel de exhibición de clasificación',
+        ],
+        'common_goods_category_model_icon_type'  => [
+            'name' => 'Icono de categoría de primer nivel en modo lista',
+            'desc' => 'Solo modo lista móvil',
+            'tips' => 'Seleccione el tipo de icono de categoría de primer nivel en modo lista',
+        ],
+        'common_goods_category_is_search_alone'  => [
+            'name' => 'Búsqueda abre página independiente',
+            'desc' => 'Solo móvil',
+            'tips' => 'Seleccione si la búsqueda de categoría abre página de búsqueda independiente',
+        ],
+        'common_goods_category_is_show_cart_nav'  => [
+            'name' => 'Habilitar navegación del carrito',
+            'desc' => 'Solo modo lista móvil',
+            'tips' => 'Seleccione si se habilita la navegación del carrito en la página de categoría',
         ],
         'common_cdn_attachment_host'  => [
             'name' => 'Anexo nombre de dominio CDN',
@@ -4726,6 +4775,16 @@ return [
             'name' => 'La portada del producto está muy estirada (extremo del teléfono móvil)',
             'desc' => 'Cuadrado predeterminado',
             'tips' => 'Por favor, elija la altura de estiramiento de la portada del producto (extremo del teléfono móvil)',
+        ],
+        'common_goods_detail_bottom_opt_cart'  => [
+            'name' => 'Habilitar carrito en navegación inferior de detalle (móvil)',
+            'desc' => '',
+            'tips' => 'Seleccione si se habilita el carrito en la navegación inferior del detalle',
+        ],
+        'common_goods_list_show_cart_opt'  => [
+            'name' => 'Mostrar carrito en lista de productos (móvil)',
+            'desc' => '',
+            'tips' => 'Seleccione si se muestra el carrito en la lista de productos',
         ],
         'common_goods_close_buy_button'  => [
             'name' => 'Cierre el botón de pedido de productos',

@@ -10,14 +10,22 @@
 // +----------------------------------------------------------------------
 
 // 系统版本
-define('APPLICATION_VERSION', 'v6.9.0');
+define('APPLICATION_VERSION', 'v6.9.1');
 
 // 检测PHP环境
 if(version_compare(PHP_VERSION, '8.0.2','<'))
 {
-    header('HTTP/1.1 500 Internal Server Error');
-    header('Content-Type:text/html;charset=utf-8');
-    die('<div style="margin-top:15%;text-align:center;font-size:16px;padding:0 10px;"><p><a href="https://shopxo.net/" target="_blank" title="ShopXO电商系统" style="font-size:36px;font-weight:bold;text-decoration:none;"><span style="color:#026ed9;">Shop</span><span style="color:#f00;">XO</span></a> <span style="color:#888;">'.APPLICATION_VERSION.'</span></p><p style="color:#f00;margin-top:10px;">需要PHP版本最低 v8.0.2，您当前PHP版本 v'.PHP_VERSION.'</p></div>');
+    $msg = '需要PHP版本最低 v8.0.2，您当前PHP版本 v'.PHP_VERSION;
+    // 是否post,ajax
+    if((isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] == 'POST') || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 'xmlhttprequest' == strtolower($_SERVER['HTTP_X_REQUESTED_WITH'])))
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        exit(json_encode(['code'=>-1, 'msg'=>$msg, 'data'=>'']));
+    } else {
+        header('HTTP/1.1 500 Internal Server Error');
+        header('Content-Type:text/html;charset=utf-8');
+        die('<div style="margin-top:15%;text-align:center;font-size:16px;padding:0 10px;"><p><a href="https://shopxo.net/" target="_blank" title="ShopXO电商系统" style="font-size:36px;font-weight:bold;text-decoration:none;"><span style="color:#026ed9;">Shop</span><span style="color:#f00;">XO</span></a> <span style="color:#888;">'.APPLICATION_VERSION.'</span></p><p style="color:#f00;margin-top:10px;">'.$msg.'</p></div>');
+    }
 }
 
 // 定义系统目录分隔符
@@ -124,20 +132,22 @@ define('ROOT', substr(ROOT_PATH, 0, -7));
 // 定义应用目录
 define('APP_PATH', ROOT.'app'.DS);
 
-// 防止独立入口文件已定义，系统类型 [default] 默认default、可根据终端区分系统类型
-if(!defined('SYSTEM_TYPE'))
+// 系统类型 [default] 默认default、可根据终端区分系统类型
+$system_type = (empty($_REQUEST['system_type']) || !is_string($_REQUEST['system_type'])) ? 'default' : trim($_REQUEST['system_type']);
+if($system_type === '' || preg_match('/^[a-zA-Z0-9_-]+$/', $system_type) !== 1)
 {
-    define('SYSTEM_TYPE', empty($_REQUEST['system_type']) ? 'default' : trim($_REQUEST['system_type']));
+    $system_type = 'default';
 }
+define('SYSTEM_TYPE', $system_type);
 
 // 请求应用 [web, app] 默认web(ios|android|小程序 均为app)
-define('APPLICATION', empty($_REQUEST['application']) ? 'web' : trim($_REQUEST['application']));
+define('APPLICATION', empty($_REQUEST['application']) ? 'web' : trim(htmlspecialchars($_REQUEST['application'])));
 
 // 请求客户端 [pc, h5, ios, android, alipay, weixin, baidu, toutiao, qq, kuaishou] 默认pc(目前系统为自适应,h5需自行校验)
-define('APPLICATION_CLIENT_TYPE', empty($_REQUEST['application_client_type']) ? 'pc' : trim($_REQUEST['application_client_type']));
+define('APPLICATION_CLIENT_TYPE', empty($_REQUEST['application_client_type']) ? 'pc' : trim(htmlspecialchars($_REQUEST['application_client_type'])));
 
 // 请求客户端手机品牌（调试模式为 devtools）
-define('APPLICATION_CLIENT_BRAND', empty($_REQUEST['application_client_brand']) ? '' : trim($_REQUEST['application_client_brand']));
+define('APPLICATION_CLIENT_BRAND', empty($_REQUEST['application_client_brand']) ? '' : trim(htmlspecialchars($_REQUEST['application_client_brand'])));
 
 // 是否get
 define('IS_GET', isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] == 'GET');

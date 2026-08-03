@@ -77,7 +77,7 @@ $(function()
     // 快递添加开启
     $('.express-submit-add').on('click', function()
     {
-        $popup_express.modal({width: 360});
+        $popup_express.modal({width: 360, closeViaDimmer: false});
         $popup_express.attr('data-type', 'add');
 
         // 清空数据
@@ -123,7 +123,7 @@ $(function()
         FormDataFill(value[index], 'form.form-validation-express');
 
         // 基础数据
-        $popup_express.modal({width: 360});
+        $popup_express.modal({width: 360, closeViaDimmer: false});
         $popup_express.attr('data-type', 'edit');
         $popup_express.attr('data-index', index);
     });

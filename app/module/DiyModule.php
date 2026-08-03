@@ -60,6 +60,14 @@ class DiyModule
         {
             $config = json_decode($config, true);
         }
+
+        // 请求参数变量替换（如 ${keywords}）
+        $replace_params = self::ConfigRequestParams($params);
+        if(!empty($replace_params))
+        {
+            $config = self::ConfigParamsReplace($config, $replace_params);
+        }
+
         // 数据处理
         $config = self::ConfigViewAnnexHandle($config);
 
@@ -1102,6 +1110,101 @@ class DiyModule
                         $data[$k] = self::ConfigViewAnnexHandle($v);
                     }
                 }
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * 配置是否包含动态参数变量
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [array|string]    $config [配置数据]
+     */
+    public static function ConfigHasDynamicParams($config)
+    {
+        if(empty($config))
+        {
+            return false;
+        }
+        if(is_array($config))
+        {
+            $config = json_encode($config, JSON_UNESCAPED_UNICODE);
+        }
+        return preg_match('/\$\{[a-zA-Z_][a-zA-Z0-9_]*\}/', $config) === 1;
+    }
+
+    /**
+     * 获取可用于变量替换的请求参数
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [array]           $params [输入参数]
+     */
+    public static function ConfigRequestParams($params = [])
+    {
+        if(empty($params) || !is_array($params))
+        {
+            return [];
+        }
+        static $exclude_keys = [
+            'is_view', 'is_config_handle', 'is_config_data_handle',
+            'n', 'm', 'field', 'where', 'order_by', 'page', 'page_size',
+            'is_cache', 'id', 'diy_id', 'token', 'access_token',
+            'application', 'application_client_type', 'system_type',
+            'user', 'plugins_action_name', 'plugins_controller_name',
+            'business_type', 'business_value', 'is_spec', 'is_cart', 'is_favor',
+            'goods_ids', 'article_ids', 'brand_ids', 'type', 'start', 'end',
+        ];
+        $result = [];
+        foreach($params as $k=>$v)
+        {
+            if(is_int($k) || in_array($k, $exclude_keys))
+            {
+                continue;
+            }
+            if(is_scalar($v))
+            {
+                $result[$k] = $v;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * 配置参数变量替换
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [array|string]    $data            [配置数据]
+     * @param   [array]           $replace_params  [替换参数]
+     */
+    public static function ConfigParamsReplace($data, $replace_params = [])
+    {
+        if(empty($replace_params))
+        {
+            return $data;
+        }
+        if(is_string($data))
+        {
+            return preg_replace_callback('/\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', function($matches) use ($replace_params)
+            {
+                $key = $matches[1];
+                return array_key_exists($key, $replace_params) ? strval($replace_params[$key]) : $matches[0];
+            }, $data);
+        }
+        if(is_array($data))
+        {
+            foreach($data as $k=>$v)
+            {
+                $data[$k] = self::ConfigParamsReplace($v, $replace_params);
             }
         }
         return $data;

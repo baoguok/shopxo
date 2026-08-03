@@ -124,6 +124,37 @@ class Payment extends Base
         return MyView();
     }
 
+    /**
+     * 上传到商店页面
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     */
+    public function StoreUploadInfo()
+    {
+        // 获取数据
+        $data = [];
+        if(!empty($this->data_request['id']))
+        {
+            $ret = PaymentService::PluginsPaymentList();
+            if(!empty($ret['data']))
+            {
+                $res = array_column($ret['data'], null, 'payment');
+                if(isset($res[$this->data_request['id']]))
+                {
+                    $data = $res[$this->data_request['id']];
+                }
+            }
+        }
+        MyViewAssign([
+            'data'                      => $data,
+            'choice_system_new_version' => APPLICATION_VERSION,
+        ]);
+        return MyView();
+    }
+
 	/**
 	 * 保存
 	 * @author   Devil
@@ -185,6 +216,37 @@ class Payment extends Base
     public function Delete()
     {
         return ApiService::ApiDataReturn(PaymentService::Delete($this->data_request));
+    }
+
+    /**
+     * 下载
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     */
+    public function Download()
+    {
+        $ret = PaymentService::PaymentDownload($this->data_request);
+        if(isset($ret['code']) && $ret['code'] != 0)
+        {
+            MyViewAssign('msg', $ret['msg']);
+            return MyView('public/tips_error');
+        }
+    }
+
+    /**
+     * 上传到商店
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     */
+    public function StoreUpload()
+    {
+        return ApiService::ApiDataReturn(PaymentService::PaymentStoreUpload($this->data_request));
     }
 
     /**

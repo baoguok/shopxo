@@ -217,7 +217,7 @@ class Order
                 'label'         => $lang['take'],
                 'view_type'     => 'module',
                 'view_key'      => 'order/module/take',
-                'width'         => 130,
+                'grid_size'     => 'sm',
                 'search_config' => [
                     'form_type'             => 'input',
                     'form_name'             => 'id',

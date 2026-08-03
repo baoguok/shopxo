@@ -933,20 +933,38 @@ class FormTableHandleModule
                 }
             }
 
+            // 数据请求参数
+            $data_params = (!empty($form_data['data_params']) && is_array($form_data['data_params'])) ? $form_data['data_params'] : [];
+            // 列表和详情自定义参数合并
+            $data_params_field = $base['is_detail'] ? 'detail_params' : 'list_params';
+            if(!empty($form_data[$data_params_field]))
+            {
+                $data_params = array_merge($data_params, $form_data[$data_params_field]);
+            }
+
+            // 是否自定义闭包/可调用方法 - 数据处理
+            if(!empty($form_data['data_handle']))
+            {
+                $data_handle_callable = $form_data['data_handle'];
+                if(is_callable($data_handle_callable))
+                {
+                    $res = $data_handle_callable($this->data_list, $data_params);
+                    // 是否按照数据返回格式方法放回的数据
+                    if(isset($res['code']) && isset($res['msg']) && isset($res['data']))
+                    {
+                        $this->data_list = $res['data'];
+                    } else {
+                        $this->data_list = $res;
+                    }
+                }
+            }
+
             // 是否已定义数据处理、必须存在双冒号
             $m = $this->ServiceActionModule($form_data, 'data_handle');
             if(!empty($m))
             {
                 $module = $m['module'];
                 $action = $m['action'];
-                // 数据请求参数
-                $data_params = (!empty($form_data['data_params']) && is_array($form_data['data_params'])) ? $form_data['data_params'] : [];
-                // 列表和详情自定义参数合并
-                $data_params_field = $base['is_detail'] ? 'detail_params' : 'list_params';
-                if(!empty($form_data[$data_params_field]))
-                {
-                    $data_params = array_merge($data_params, $form_data[$data_params_field]);
-                }
                 $res = $module::$action($this->data_list, $data_params);
                 // 是否按照数据返回格式方法放回的数据
                 if(isset($res['code']) && isset($res['msg']) && isset($res['data']))
@@ -1030,6 +1048,18 @@ class FormTableHandleModule
             {
                 // 是否定义分页提示信息
                 $tips_msg = '';
+
+                // 是否自定义闭包/可调用方法处理提示信息
+                if(!empty($form_data['page_tips_handle']))
+                {
+                    $page_tips_handle_callable = $form_data['page_tips_handle'];
+                    if(is_callable($page_tips_handle_callable))
+                    {
+                        $tips_msg = $page_tips_handle_callable($this->where);
+                    }
+                }
+
+                // 指定模块处理分页提示信息
                 $m = $this->ServiceActionModule($form_data, 'page_tips_handle');
                 if(!empty($m))
                 {
@@ -1335,7 +1365,7 @@ class FormTableHandleModule
     public function ServiceActionModuleHandle($value)
     {
         $result = [];
-        if(!empty($value) && stripos($value, '::') !== false)
+        if(!empty($value) && is_string($value) && stripos($value, '::') !== false)
         {
             $arr = explode('::', $value);
             $action = $arr[1];
@@ -2116,6 +2146,12 @@ class FormTableHandleModule
 
             // 默认走自定义模块处理
             default :
+                // 是否自定义闭包/可调用方法
+                if(is_callable($action_custom))
+                {
+                    return $action_custom($value, $params);
+                }
+
                 // 是否自定义类方法处理
                 $m = $this->ServiceActionModuleHandle($action_custom);
                 if(!empty($m))

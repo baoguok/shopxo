@@ -91,6 +91,28 @@
                     </div>
 
                     <div class="am-form-group">
+                        <label class="am-block">{{$data.common_is_share_use_image.name}}<span class="am-form-group-label-tips">{{$data.common_is_share_use_image.describe}}</span></label>
+                        <div class="am-radio-group">
+                            {{foreach :MyConst('common_is_text_list') as $v}}
+                                <label class="am-radio-inline">
+                                    <input type="radio" value="{{$v.id}}" name="{{$data.common_is_share_use_image.only_tag}}" data-validation-message="{{$data.common_is_share_use_image.error_tips}}" required {{if isset($data['common_is_share_use_image']['value']) and $data['common_is_share_use_image']['value'] eq $v['id']}}checked{{/if}} data-am-ucheck>{{$v.name}}
+                                </label>
+                            {{/foreach}}
+                        </div>
+                    </div>
+
+                    <div class="am-form-group">
+                        <label class="am-block">{{$data.common_user_center_nav_show_model_type.name}}<span class="am-form-group-label-tips">{{$data.common_user_center_nav_show_model_type.describe}}</span></label>
+                        <div class="am-radio-group">
+                            {{foreach :MyConst('common_user_center_nav_show_model_type_list') as $v}}
+                                <label class="am-radio-inline">
+                                    <input type="radio" value="{{$v.value}}" name="{{$data.common_user_center_nav_show_model_type.only_tag}}" data-validation-message="{{$data.common_user_center_nav_show_model_type.error_tips}}" required {{if isset($data['common_user_center_nav_show_model_type']['value']) and $data['common_user_center_nav_show_model_type']['value'] eq $v['value']}}checked{{/if}} data-am-ucheck>{{$v.name}}
+                                </label>
+                            {{/foreach}}
+                        </div>
+                    </div>
+
+                    <div class="am-form-group">
                         <label class="am-block">{{$data.common_user_verify_bind_mobile_list.name}}<span class="am-form-group-label-tips">{{$data.common_user_verify_bind_mobile_list.describe}}</span></label>
                         <div class="am-checkbox-group am-flex am-gap-12">
                             {{foreach :MyConst('common_platform_type') as $v}}

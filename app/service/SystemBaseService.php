@@ -168,10 +168,13 @@ class SystemBaseService
             
             // 用户中心相关
             'common_user_center_notice'                          => MyC('common_user_center_notice', null, true),
-            'common_app_is_head_vice_nav'                        => (int) MyC('common_app_is_head_vice_nav', 0),
+            'common_app_is_head_vice_nav'                        => (int) MyC('common_app_is_head_vice_nav', 0, true),
             
             // 商品分类相关
-            'category_show_level'                                => MyC('common_show_goods_category_level', 0, true),
+            'common_show_goods_category_level'                   => (int) MyC('common_show_goods_category_level', 0, true),
+            'common_goods_category_model_icon_type'              => (int) MyC('common_goods_category_model_icon_type', 0, true),
+            'common_goods_category_is_search_alone'              => (int) MyC('common_goods_category_is_search_alone', 0, true),
+            'common_goods_category_is_show_cart_nav'             => (int) MyC('common_goods_category_is_show_cart_nav', 0, true),
             
             // 商品相关
             'common_app_is_use_mobile_detail'                    => (int) MyC('common_app_is_use_mobile_detail'),
@@ -182,6 +185,12 @@ class SystemBaseService
             'common_is_goods_detail_content_show_photo'          => (int) MyC('common_is_goods_detail_content_show_photo', 0, true),
             'common_is_exhibition_mode_btn_text'                 => MyC('common_is_exhibition_mode_btn_text', '立即咨询', true),
             'common_goods_cover_size_type'                       => (int) MyC('common_goods_cover_size_type', 0, true),
+            'common_goods_detail_bottom_opt_cart'              => (int) MyC('common_goods_detail_bottom_opt_cart', 0, true),
+            'common_goods_list_show_cart_opt'                  => (int) MyC('common_goods_list_show_cart_opt', 0, true),
+            
+            // 分享相关
+            'common_is_share_use_image'                          => (int) MyC('common_is_share_use_image', 0, true),
+            'common_user_center_nav_show_model_type'             => (int) MyC('common_user_center_nav_show_model_type', 0, true),
             
             // 地图密钥
             'common_map_type'                                    => MyC('common_map_type', 'baidu', true),

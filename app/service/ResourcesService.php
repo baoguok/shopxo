@@ -71,6 +71,30 @@ class ResourcesService
     }
 
     /**
+     * 附件集合处理
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2018-08-07
+     * @desc    description
+     * @param   [array]          $params [输入参数]
+     * @param   [array]          $data   [字段列表]
+     */
+    public static function AttachmentParams($params, $data)
+    {
+        $result = [];
+        if(!empty($data))
+        {
+            foreach($data as $field)
+            {
+                $result[$field] = isset($params[$field]) ? self::AttachmentPathHandle($params[$field]) : '';
+            }
+        }
+
+        return DataReturn('success', 0, $result);
+    }
+
+    /**
      * 附件路径处理
      * @author  Devil
      * @blog    http://gong.gg/
@@ -113,30 +137,6 @@ class ResourcesService
             }
         }
         return $value;
-    }
-
-    /**
-     * 附件集合处理
-     * @author  Devil
-     * @blog    http://gong.gg/
-     * @version 1.0.0
-     * @date    2018-08-07
-     * @desc    description
-     * @param   [array]          $params [输入参数]
-     * @param   [array]          $data   [字段列表]
-     */
-    public static function AttachmentParams($params, $data)
-    {
-        $result = [];
-        if(!empty($data))
-        {
-            foreach($data as $field)
-            {
-                $result[$field] = isset($params[$field]) ? self::AttachmentPathHandle($params[$field]) : '';
-            }
-        }
-
-        return DataReturn('success', 0, $result);
     }
 
     /**
@@ -875,6 +875,195 @@ class ResourcesService
     }
 
     /**
+     * 获取表字段列表
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [string]          $table [表名称、可以是大写字母会自动转为小写前面加下划线分隔]
+     */
+    public static function TableStructureFields($table)
+    {
+        $data = self::TableStructureData($table);
+        return empty($data) ? [] : array_keys($data);
+    }
+
+    /**
+     * 查询字段映射
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [string|array]    $table [表名称、或别名映射['a'=>'User','b'=>'UserPlatform']]
+     */
+    private static function DbAllowFieldsMap($table)
+    {
+        if(is_array($table))
+        {
+            $map = [];
+            foreach($table as $alias => $table_name)
+            {
+                if(!is_string($alias) || !preg_match('/^[a-zA-Z0-9_]+$/', $alias) || empty($table_name))
+                {
+                    continue;
+                }
+                $fields = self::TableStructureFields($table_name);
+                if(!empty($fields))
+                {
+                    $map[$alias] = $fields;
+                }
+            }
+            return $map;
+        }
+
+        $fields = self::TableStructureFields($table);
+        return empty($fields) ? [] : ['' => $fields];
+    }
+
+    /**
+     * 查询字段项安全校验
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [string]          $field_item [字段项]
+     * @param   [array]           $allow_map  [允许字段映射]
+     */
+    private static function DbFieldItemSafeValidate($field_item, $allow_map)
+    {
+        if(empty($allow_map) || !is_string($field_item))
+        {
+            return false;
+        }
+
+        // 联表 alias.field
+        if(strpos($field_item, '.') !== false)
+        {
+            $parts = explode('.', $field_item, 2);
+            if(count($parts) !== 2 || !preg_match('/^[a-zA-Z0-9_]+$/', $parts[0]) || !preg_match('/^[a-zA-Z0-9_]+$/', $parts[1]))
+            {
+                return false;
+            }
+            if(!isset($allow_map[$parts[0]]) || !in_array($parts[1], $allow_map[$parts[0]], true))
+            {
+                return false;
+            }
+            return $parts[0].'.'.$parts[1];
+        }
+
+        // 单表 field
+        if(!isset($allow_map['']) || !preg_match('/^[a-zA-Z0-9_]+$/', $field_item) || !in_array($field_item, $allow_map[''], true))
+        {
+            return false;
+        }
+        return $field_item;
+    }
+
+    /**
+     * 查询字段安全处理
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [string]          $field   [字段、支持 id,title 或 a.id,b.name]
+     * @param   [string|array]    $table   [表名称、或别名映射['a'=>'User','b'=>'UserPlatform']]
+     * @param   [string]          $default [默认字段]
+     */
+    public static function DbFieldSafeHandle($field, $table, $default = '*')
+    {
+        if(empty($field) || $field === '*')
+        {
+            return '*';
+        }
+        if(!is_string($field))
+        {
+            return $default;
+        }
+
+        $allow_map = self::DbAllowFieldsMap($table);
+        if(empty($allow_map))
+        {
+            return $default;
+        }
+
+        $fields = array_filter(array_map('trim', explode(',', $field)));
+        if(empty($fields))
+        {
+            return $default;
+        }
+
+        $safe_fields = [];
+        foreach($fields as $v)
+        {
+            $safe_field = self::DbFieldItemSafeValidate($v, $allow_map);
+            if($safe_field === false)
+            {
+                return $default;
+            }
+            $safe_fields[] = $safe_field;
+        }
+        return empty($safe_fields) ? $default : implode(',', array_unique($safe_fields));
+    }
+
+    /**
+     * 查询排序安全处理
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [string]          $order_by [排序、支持 id desc 或 a.id desc,b.sort asc]
+     * @param   [string|array]    $table    [表名称、或别名映射['a'=>'User','b'=>'UserPlatform']]
+     * @param   [string]          $default  [默认排序]
+     */
+    public static function DbOrderBySafeHandle($order_by, $table, $default = 'id desc')
+    {
+        if(empty($order_by) || !is_string($order_by))
+        {
+            return $default;
+        }
+
+        $allow_map = self::DbAllowFieldsMap($table);
+        if(empty($allow_map))
+        {
+            return $default;
+        }
+
+        $order_by = trim($order_by);
+        $items = array_filter(array_map('trim', explode(',', $order_by)));
+        if(empty($items))
+        {
+            return $default;
+        }
+
+        $safe_items = [];
+        foreach($items as $item)
+        {
+            $parts = preg_split('/\s+/', $item);
+            if(empty($parts[0]))
+            {
+                return $default;
+            }
+            $safe_field = self::DbFieldItemSafeValidate($parts[0], $allow_map);
+            if($safe_field === false)
+            {
+                return $default;
+            }
+            $rule = isset($parts[1]) ? strtolower($parts[1]) : 'asc';
+            if(!in_array($rule, ['asc', 'desc'], true))
+            {
+                return $default;
+            }
+            $safe_items[] = $safe_field.' '.$rule;
+        }
+        return empty($safe_items) ? $default : implode(',', $safe_items);
+    }
+
+    /**
      * 商品导航菜单
      * @author  Devil
      * @blog    http://gong.gg/
@@ -1233,6 +1422,74 @@ class ResourcesService
             'plugins_css'       => $plugins_css,
             'plugins_js'        => $plugins_js,
         ];
+    }
+
+    /**
+     * 数据隐私脱敏
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    description
+     * @param   [string]          $value [原始数据]
+     * @param   [string]          $type  [类型 mobile|email|username]
+     */
+    public static function DataSecurity($value, $type = 'username')
+    {
+        if($value === '' || $value === null)
+        {
+            return '';
+        }
+        switch($type)
+        {
+            // 手机号（前3 + 后4）
+            case 'mobile' :
+                $len = mb_strlen($value, 'utf-8');
+                if($len <= 4)
+                {
+                    return mb_substr($value, 0, 1, 'utf-8').'***';
+                }
+                if($len <= 7)
+                {
+                    return mb_substr($value, 0, 2, 'utf-8').'***'.mb_substr($value, -2, null, 'utf-8');
+                }
+                return mb_substr($value, 0, 3, 'utf-8').'****'.mb_substr($value, -4, null, 'utf-8');
+
+            // 邮箱（@前保留1~2位）
+            case 'email' :
+                $pos = mb_strpos($value, '@', 0, 'utf-8');
+                if($pos === false)
+                {
+                    return self::DataSecurity($value, 'username');
+                }
+                $local = mb_substr($value, 0, $pos, 'utf-8');
+                $domain = mb_substr($value, $pos, null, 'utf-8');
+                $local_len = mb_strlen($local, 'utf-8');
+                if($local_len <= 1)
+                {
+                    $local_security = '*';
+                } elseif($local_len == 2)
+                {
+                    $local_security = mb_substr($local, 0, 1, 'utf-8').'*';
+                } else {
+                    $local_security = mb_substr($local, 0, 2, 'utf-8').'***';
+                }
+                return $local_security.$domain;
+
+            // 用户名（前后各1位）
+            case 'username' :
+            default :
+                $len = mb_strlen($value, 'utf-8');
+                if($len <= 1)
+                {
+                    return '*';
+                }
+                if($len == 2)
+                {
+                    return mb_substr($value, 0, 1, 'utf-8').'*';
+                }
+                return mb_substr($value, 0, 1, 'utf-8').'***'.mb_substr($value, -1, null, 'utf-8');
+        }
     }
 
     /**

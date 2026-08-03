@@ -171,6 +171,9 @@ class Buy extends Common
             // 订单确认页面地址底部钩子
             'plugins_view_buy_address_bottom',
 
+            // 订单确认页面支付方式顶部钩子
+            'plugins_view_buy_payment_top',
+
             // 订单确认页面支付方式底部钩子
             'plugins_view_buy_payment_bottom',
 

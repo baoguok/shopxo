@@ -1008,14 +1008,18 @@ class UserService
                 $user['birthday'] = DataHandleTimeFormat($user['birthday'], 'Y-m-d', '');
             }
 
-            // 邮箱/手机
+            // 邮箱/手机/用户名
             if(isset($user['mobile']))
             {
-                $user['mobile_security'] = empty($user['mobile']) ? '' : mb_substr($user['mobile'], 0, 3, 'utf-8').'***'.mb_substr($user['mobile'], -3, null, 'utf-8');
+                $user['mobile_security'] = ResourcesService::DataSecurity($user['mobile'], 'mobile');
             }
             if(isset($user['email']))
             {
-                $user['email_security'] = empty($user['email']) ? '' : mb_substr($user['email'], 0, 3, 'utf-8').'***'.mb_substr($user['email'], -3, null, 'utf-8');
+                $user['email_security'] = ResourcesService::DataSecurity($user['email'], 'email');
+            }
+            if(isset($user['username']))
+            {
+                $user['username_security'] = ResourcesService::DataSecurity($user['username'], 'username');
             }
 
             // 地址信息
@@ -1026,9 +1030,9 @@ class UserService
 
             // 显示名称,根据规则优先展示
             $user['user_name_view'] = isset($user['nickname']) ? $user['nickname'] : '';
-            if(empty($user['user_name_view']) && isset($user['username']))
+            if(empty($user['user_name_view']) && isset($user['username_security']))
             {
-                $user['user_name_view'] = $user['username'];
+                $user['user_name_view'] = $user['username_security'];
             }
             if(empty($user['user_name_view']) && isset($user['mobile_security']))
             {

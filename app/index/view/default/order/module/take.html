@@ -1,13 +1,50 @@
-<!-- 取货信息 -->
+<!-- 取货信息（按商品明细） -->
 {{if !empty($module_data) and !empty($module_data['extraction_data'])}}
-    <p>
-        {{if empty($module_data['extraction_data']['code'])}}
-            <span class="am-text-danger">{{:MyLang('no_data')}}</span>
-        {{else /}}
-            <span class="text-copy-submit am-vertical-align-middle">{{$module_data.extraction_data.code}}</span>
-            {{if !empty($module_data['extraction_data']['images'])}}
-                <img class="am-img-thumbnail am-radius am-vertical-align-middle common-annex-view-event" src="{{$module_data.extraction_data.images}}" width="18" height="18" data-is-download="1" />
+    {{if !empty($module_data['extraction_data']['items']) and is_array($module_data['extraction_data']['items'])}}
+        {{foreach $module_data.extraction_data.items as $ev}}
+            <div class="extraction-take-list-item am-margin-bottom-xs">
+                {{if !empty($ev['goods_url'])}}
+                    <a href="{{$ev.goods_url}}" target="_blank" rel="noopener noreferrer" class="am-flex am-flex-items-center am-gap-1-half">
+                        {{if !empty($ev['goods_images'])}}
+                            <img class="am-img-thumbnail am-radius" src="{{$ev.goods_images}}" alt="{{$ev.goods_title}}" width="20" height="20" />
+                        {{/if}}
+                        {{if !empty($ev['goods_title'])}}
+                            <span class="am-flex-1 am-flex-width am-text-truncate">{{$ev.goods_title}}</span>
+                        {{/if}}
+                    </a>
+                {{else /}}
+                    <div class="am-flex am-flex-items-center am-gap-1-half">
+                        {{if !empty($ev['goods_images'])}}
+                            <img class="am-img-thumbnail am-radius" src="{{$ev.goods_images}}" alt="{{$ev.goods_title}}" width="20" height="20" />
+                        {{/if}}
+                        {{if !empty($ev['goods_title'])}}
+                            <span class="am-flex-1 am-flex-width am-text-truncate">{{$ev.goods_title}}</span>
+                        {{/if}}
+                    </div>
+                {{/if}}
+                <p class="am-margin-top-xs">
+                    {{if empty($ev['code'])}}
+                        <span class="am-text-danger">{{:MyLang('no_data')}}</span>
+                    {{else /}}
+                        <span class="text-copy-submit am-vertical-align-middle">{{$ev.code}}</span>
+                        {{if !empty($ev['images'])}}
+                            <img class="am-img-thumbnail am-radius am-vertical-align-middle common-annex-view-event" src="{{$ev.images}}" width="18" height="18" data-is-download="1" />
+                        {{/if}}
+                        <span class="am-text-grey am-margin-left">{{$ev.verify_number}}/{{$ev.total_number}}</span>
+                    {{/if}}
+                </p>
+            </div>
+        {{/foreach}}
+    {{else /}}
+        <p>
+            {{if empty($module_data['extraction_data']['code'])}}
+                <span class="am-text-danger">{{:MyLang('no_data')}}</span>
+            {{else /}}
+                <span class="text-copy-submit am-vertical-align-middle">{{$module_data.extraction_data.code}}</span>
+                {{if !empty($module_data['extraction_data']['images'])}}
+                    <img class="am-img-thumbnail am-radius am-vertical-align-middle common-annex-view-event" src="{{$module_data.extraction_data.images}}" width="18" height="18" data-is-download="1" />
+                {{/if}}
             {{/if}}
-        {{/if}}
-    </p>
+        </p>
+    {{/if}}
 {{/if}}

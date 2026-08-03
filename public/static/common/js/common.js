@@ -1069,8 +1069,9 @@ function VideoFileUploadShow (class_name, show_video, default_video) {
  * @param   {[string]}  on_open	      [开启监听方法]
  * @param   {[string]}  on_close	  [关闭监听方法]
  * @param   {[string]}  offcanvas     [侧边栏弹窗 top/bottom/left/right]
+ * @param   {[int]}     close_via_dimmer [是否允许点击遮罩关闭 默认1允许、0禁止]
  */
-function ModalLoad (url, title, class_tag, full = 0, full_max = 0, full_max_size = '', on_open = '', on_close = '', offcanvas = '') {
+function ModalLoad (url, title, class_tag, full = 0, full_max = 0, full_max_size = '', on_open = '', on_close = '', offcanvas = '', close_via_dimmer = 1) {
     // class 定义
     var ent = 'popup-iframe';
 
@@ -1104,6 +1105,7 @@ function ModalLoad (url, title, class_tag, full = 0, full_max = 0, full_max_size
         title: title || '',
         content: '<iframe src="' + RequestUrlHandle(url) + '" width="100%" height="100%" class="am-block" id="' + iframe_id + '"></iframe>',
         class: ent,
+        closeViaDimmer: !(close_via_dimmer === 0 || close_via_dimmer === false || close_via_dimmer === '0'),
         onOpen: function () {
             // 子页面样式处理
             IframeSubpageStyleHandle(iframe_id, 'iframe-popup-page');
@@ -6083,9 +6085,14 @@ $(function () {
         var on_open = $(this).attr('data-on-open') || '';
         var on_close = $(this).attr('data-on-close') || '';
         var offcanvas = $(this).attr('data-offcanvas') || '';
+        // 是否允许点击遮罩关闭（默认允许，data-close-via-dimmer="0" 禁止）
+        var close_via_dimmer = $(this).attr('data-close-via-dimmer');
+        if (close_via_dimmer == undefined) {
+            close_via_dimmer = 1;
+        }
 
         // 调用弹窗方法
-        ModalLoad(url, title, class_tag, full, full_max, full_max_size, on_open, on_close, offcanvas);
+        ModalLoad(url, title, class_tag, full, full_max, full_max_size, on_open, on_close, offcanvas, close_via_dimmer);
     });
 
     // 加载 loading modal 弹层

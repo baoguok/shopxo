@@ -207,14 +207,97 @@ ul.progress-4 li {
 }
 
 /**
- * 自提
+ * 自提 - 取货信息面板
  */
-.order-state .extraction-take-container p > img {
-	background: transparent;
-	border: 0;
+.order-extraction-take {
+	margin-top: 1.5rem;
 }
-.order-state .extraction-take-container .extraction-take-title {
+.order-extraction-take .extraction-take-switch {
+	position: relative;
+	max-width: 32rem;
+	margin: 0;
+}
+.order-extraction-take .extraction-take-body {
+	width: 100%;
+}
+.order-extraction-take .extraction-take-item {
+	width: 100%;
+}
+.order-extraction-take .extraction-take-goods {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	gap: 0.8rem;
+	margin-bottom: 1.2rem;
+	text-decoration: none;
+}
+a.extraction-take-goods:hover .extraction-take-goods-title {
+	color: #1688f1;
+}
+.order-extraction-take .extraction-take-goods-title {
+	flex: 1;
+	min-width: 0;
+	text-align: left;
+}
+.order-extraction-take .extraction-take-code {
+	text-align: center;
+	padding: 0 4.4rem;
+}
+.order-extraction-take .extraction-take-code .qrcode-images {
+	margin: 0 auto;
+	display: block;
+}
+.order-extraction-take .extraction-take-meta {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-left: auto;
+	margin-right: auto;
+	width: 16rem;
+	text-align: left;
+}
+.order-extraction-take .extraction-take-meta-label {
+	width: 5em;
+	flex-shrink: 0;
+	text-align: right;
+}
+.order-extraction-take .extraction-take-meta-value {
+	flex: 1;
+	min-width: 0;
+	text-align: left;
+	font-variant-numeric: tabular-nums;
+}
+.order-extraction-take .extraction-take-arrow {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 3.2rem;
+	height: 3.2rem;
+	line-height: 3.2rem;
+	text-align: center;
+	color: #666;
+	font-size: 2.2rem;
+	border-radius: 50%;
+	background: #f5f5f5;
+	z-index: 1;
+}
+.order-extraction-take .extraction-take-prev {
+	left: 0;
+}
+.order-extraction-take .extraction-take-next {
+	right: 0;
+}
+.order-extraction-take .extraction-take-arrow:hover {
 	color: #0c7cd5;
+	background: rgba(12, 124, 213, 0.08);
+}
+.order-extraction-take .extraction-take-switch[data-count="1"] .extraction-take-arrow {
+	visibility: hidden;
+}
+@media only screen and (max-width: 420px) {
+	.order-extraction-take .extraction-take-switch {
+		margin: 0 auto;
+	}
 }
 
 /**

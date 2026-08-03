@@ -716,9 +716,31 @@ class BuyService
         $common_order_is_booking = MyC('common_order_is_booking', 0);
 
         // 金额大于0、非预约模式 必须选择支付方式
+        // 后台来源(user_type=admin)且 is_check_payment=0 时不强制；默认验证
+        // 未传支付方式时下方也不走支付相关处理
         if($buy['data']['base']['actual_price'] > 0 && $common_order_is_booking != 1)
         {
-            if(empty($params['payment_id']))
+            $is_payment_required = true;
+            if(
+                isset($params['user_type']) && $params['user_type'] == 'admin'
+                && isset($params['is_check_payment']) && intval($params['is_check_payment']) == 0
+            )
+            {
+                $is_payment_required = false;
+            }
+            $hook_name = 'plugins_service_buy_order_payment_require_handle';
+            $ret = EventReturnHandle(MyEventTrigger($hook_name, [
+                'hook_name'             => $hook_name,
+                'is_backend'            => true,
+                'params'                => $params,
+                'buy_data'              => $buy['data'],
+                'is_payment_required'   => &$is_payment_required,
+            ]));
+            if(isset($ret['code']) && $ret['code'] != 0)
+            {
+                return $ret;
+            }
+            if($is_payment_required && empty($params['payment_id']))
             {
                 return DataReturn(MyLang('payment_method_error_tips'), -1);
             }
@@ -730,7 +752,7 @@ class BuyService
         // 订单默认状态
         $order_status = ($common_order_is_booking == 1) ? 0 : 1;
 
-        // 支付方式
+        // 支付方式（未传则不处理支付逻辑，payment_id 记 0）
         $payment_id = 0;
         $is_under_line = 0;
         if(!empty($params['payment_id']))
@@ -1066,10 +1088,10 @@ class BuyService
                         }
                     }
 
-                    // 自提模式 添加订单取货码
+                    // 自提模式 按订单商品明细添加取货码（一商品一码，数量=可核销次数）
                     if($order['order_model'] == 2)
                     {
-                        $ret = self::OrderExtractionCcodeInsert($order_id, $order['user_id'], $params);
+                        $ret = self::OrderExtractionCcodeInsert($order_id, $order['user_id'], $v['detail_data'], $params);
                         if($ret['code'] != 0)
                         {
                             throw new \Exception($ret['msg']);
@@ -1239,46 +1261,87 @@ class BuyService
     }
 
     /**
-     * 订单关联自提取货码添加
+     * 订单关联自提取货码添加（按商品明细一商品一码）
      * @author  Devil
      * @blog    http://gong.gg/
      * @version 1.0.0
      * @date    2019-11-20
      * @desc    description
-     * @param   [int]       $order_id  [订单id]
-     * @param   [int]       $user_id   [用户id]
-     * @param   [array]     $params    [输入参数]
+     * @param   [int]       $order_id     [订单id]
+     * @param   [int]       $user_id      [用户id]
+     * @param   [array]     $detail_data  [订单商品明细]
+     * @param   [array]     $params       [输入参数]
      */
-    private static function OrderExtractionCcodeInsert($order_id, $user_id, $params = [])
+    private static function OrderExtractionCcodeInsert($order_id, $user_id, $detail_data = [], $params = [])
     {
-        $data = [
-            'order_id'  => $order_id,
-            'user_id'   => $user_id,
-            'code'      => GetNumberCode(4),
-            'add_time'  => time(),
-        ];
-
-        // 订单取货码添加前钩子
-        $hook_name = 'plugins_service_buy_order_extraction_code_insert_begin';
-        $ret = EventReturnHandle(MyEventTrigger($hook_name, [
-            'hook_name'             => $hook_name,
-            'is_backend'            => true,
-            'user_id'               => $user_id,
-            'order_id'              => $order_id,
-            'data'                  => &$data,
-            'params'                => $params,
-        ]));
-        if(isset($ret['code']) && $ret['code'] != 0)
+        if(empty($detail_data) || !is_array($detail_data))
         {
-            return $ret;
+            return DataReturn(MyLang('common_service.buy.order_take_insert_fail_tips'), -1);
         }
 
-        // 添加订单虚拟数据
-        if(Db::name('OrderExtractionCode')->insertGetId($data) > 0)
+        foreach($detail_data as $detail)
         {
-            return DataReturn(MyLang('insert_success'), 0);
+            $order_detail_id = empty($detail['id']) ? 0 : intval($detail['id']);
+            if($order_detail_id <= 0)
+            {
+                return DataReturn(MyLang('common_service.buy.order_take_insert_fail_tips'), -1);
+            }
+
+            $data = [
+                'order_id'         => $order_id,
+                'order_detail_id'  => $order_detail_id,
+                'user_id'          => $user_id,
+                'code'             => self::OrderExtractionCodeCreate(),
+                'total_number'     => max(1, intval($detail['buy_number'])),
+                'verify_number'    => 0,
+                'add_time'         => time(),
+            ];
+
+            // 订单取货码添加前钩子
+            $hook_name = 'plugins_service_buy_order_extraction_code_insert_begin';
+            $ret = EventReturnHandle(MyEventTrigger($hook_name, [
+                'hook_name'             => $hook_name,
+                'is_backend'            => true,
+                'user_id'               => $user_id,
+                'order_id'              => $order_id,
+                'order_detail_id'       => $order_detail_id,
+                'detail'                => $detail,
+                'data'                  => &$data,
+                'params'                => $params,
+            ]));
+            if(isset($ret['code']) && $ret['code'] != 0)
+            {
+                return $ret;
+            }
+
+            if(Db::name('OrderExtractionCode')->insertGetId($data) <= 0)
+            {
+                return DataReturn(MyLang('common_service.buy.order_take_insert_fail_tips'), -1);
+            }
         }
-        return DataReturn(MyLang('common_service.buy.order_take_insert_fail_tips'), -1);
+        return DataReturn(MyLang('insert_success'), 0);
+    }
+
+    /**
+     * 生成唯一取货码
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-07-30
+     * @desc    description
+     */
+    private static function OrderExtractionCodeCreate()
+    {
+        $code = '';
+        for($i = 0; $i < 20; $i++)
+        {
+            $code = GetNumberCode(4);
+            if(Db::name('OrderExtractionCode')->where(['code'=>$code])->value('id') === null)
+            {
+                break;
+            }
+        }
+        return $code;
     }
 
     /**

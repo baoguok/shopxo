@@ -61,6 +61,7 @@ class Order extends Center
             'home_seo_site_title'  => SeoService::BrowserSeoTitle(MyLang('order.base_nav_title'), 1),
         ];
         MyViewAssign($assign);
+        $this->PluginsHook();
         return MyView();
     }
 
@@ -95,7 +96,40 @@ class Order extends Center
             'home_seo_site_title'  => SeoService::BrowserSeoTitle(MyLang('order.detail_base_nav_title'), 1),
         ];
         MyViewAssign($assign);
+        $this->PluginsHook($this->data_detail);
         return MyView();
+    }
+
+    /**
+     * 钩子处理
+     * @author   Devil
+     * @blog     http://gong.gg/
+     * @version  1.0.0
+     * @date     2026-06-15
+     * @desc     description
+     * @param    [array]           $data [订单数据]
+     */
+    private function PluginsHook($data = [])
+    {
+        $hook_arr = [
+            // 支付弹窗顶部钩子
+            'plugins_view_order_payment_popup_top',
+
+            // 支付弹窗底部钩子
+            'plugins_view_order_payment_popup_bottom',
+        ];
+        $assign = [];
+        foreach($hook_arr as $hook_name)
+        {
+            $assign[$hook_name.'_data'] = MyEventTrigger($hook_name,
+                [
+                    'hook_name'     => $hook_name,
+                    'is_backend'    => false,
+                    'params'        => $this->data_request,
+                    'data'          => $data,
+                ]);
+        }
+        MyViewAssign($assign);
     }
 
     /**

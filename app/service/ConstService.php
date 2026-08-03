@@ -150,6 +150,7 @@ class ConstService
                 '6.7.1' => ['value' => '6.7.1', 'name' => 'v6.7.1'],
                 '6.8.0' => ['value' => '6.8.0', 'name' => 'v6.8.0'],
                 '6.9.0' => ['value' => '6.9.0', 'name' => 'v6.9.0'],
+                '6.9.1' => ['value' => '6.9.1', 'name' => 'v6.9.1'],
             ],
 
             // 搜索排序方式
@@ -243,11 +244,13 @@ class ConstService
                 'toutiao'   => ['value' => 'toutiao', 'name' => MyLang('common_platform_type.toutiao')],
                 'qq'        => ['value' => 'qq', 'name' => MyLang('common_platform_type.qq')],
                 'kuaishou'  => ['value' => 'kuaishou', 'name' => MyLang('common_platform_type.kuaishou')],
+                'harmony'   => ['value' => 'harmony', 'name' => MyLang('common_platform_type.harmony')],
             ],
             // app平台
             'common_app_type' => [
                 'ios'       => ['value' => 'ios', 'name' => MyLang('common_app_type.ios')],
                 'android'   => ['value' => 'android', 'name' => MyLang('common_app_type.android')],
+                'harmony'   => ['value' => 'harmony', 'name' => MyLang('common_app_type.harmony')],
             ],
             // 小程序平台
             'common_appmini_type' => [
@@ -608,6 +611,17 @@ class ConstService
                 1 => ['value' => 1, 'name' => MyLang('common_show_goods_category_level_list.1')],
                 2 => ['value' => 2, 'name' => MyLang('common_show_goods_category_level_list.2')],
                 3 => ['value' => 3, 'name' => MyLang('common_show_goods_category_level_list.3')],
+            ],
+            // 商品分类页面商品列表模式一级分类图标类型
+            'common_goods_category_model_icon_type_list' => [
+                0 => ['value' => 0, 'name' => MyLang('common_goods_category_model_icon_type_list.0')],
+                1 => ['value' => 1, 'name' => MyLang('common_goods_category_model_icon_type_list.1')],
+                2 => ['value' => 2, 'name' => MyLang('common_goods_category_model_icon_type_list.2')],
+            ],
+            // 用户中心菜单展示模式
+            'common_user_center_nav_show_model_type_list' => [
+                0 => ['value' => 0, 'name' => MyLang('common_user_center_nav_show_model_type_list.0')],
+                1 => ['value' => 1, 'name' => MyLang('common_user_center_nav_show_model_type_list.1')],
             ],
             // 图片验证码类型
             'common_site_images_verify_rand_type_list' => [

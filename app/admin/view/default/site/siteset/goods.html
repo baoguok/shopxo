@@ -150,6 +150,28 @@
                 </div>
 
                 <div class="am-form-group">
+                    <label>{{$data.common_goods_detail_bottom_opt_cart.name}}<span class="am-form-group-label-tips">{{$data.common_goods_detail_bottom_opt_cart.describe}}</span></label>
+                    <div class="am-radio-group">
+                        {{foreach $common_is_text_list as $v}}
+                            <label class="am-radio-inline">
+                                <input type="radio" value="{{$v.id}}" name="{{$data.common_goods_detail_bottom_opt_cart.only_tag}}" data-validation-message="{{$data.common_goods_detail_bottom_opt_cart.error_tips}}" required {{if isset($data['common_goods_detail_bottom_opt_cart']['value']) and $data['common_goods_detail_bottom_opt_cart']['value'] eq $v['id']}}checked{{/if}} data-am-ucheck /> {{$v.name}}
+                            </label>
+                        {{/foreach}}
+                    </div>
+                </div>
+
+                <div class="am-form-group">
+                    <label>{{$data.common_goods_list_show_cart_opt.name}}<span class="am-form-group-label-tips">{{$data.common_goods_list_show_cart_opt.describe}}</span></label>
+                    <div class="am-radio-group">
+                        {{foreach $common_is_text_list as $v}}
+                            <label class="am-radio-inline">
+                                <input type="radio" value="{{$v.id}}" name="{{$data.common_goods_list_show_cart_opt.only_tag}}" data-validation-message="{{$data.common_goods_list_show_cart_opt.error_tips}}" required {{if isset($data['common_goods_list_show_cart_opt']['value']) and $data['common_goods_list_show_cart_opt']['value'] eq $v['id']}}checked{{/if}} data-am-ucheck /> {{$v.name}}
+                            </label>
+                        {{/foreach}}
+                    </div>
+                </div>
+
+                <div class="am-form-group">
                     <label>{{$data.common_goods_close_buy_button.name}}<span class="am-form-group-label-tips">{{$data.common_goods_close_buy_button.describe}}</span></label>
                     <div class="am-checkbox-group">
                         <label class="am-checkbox-inline">
@@ -170,38 +192,6 @@
                             </label>
                         {{/foreach}}
                     </div>
-                </div>
-
-                <div class="am-form-group">
-                    <label>{{$data.common_show_goods_category_level.name}}<span class="am-form-group-label-tips">{{$data.common_show_goods_category_level.describe}}</span></label>
-                    <div class="am-radio-group level-type">
-                        {{foreach $common_show_goods_category_level_list as $v}}
-                            <label class="am-radio-inline">
-                                <input type="radio" value="{{$v.value}}" name="{{$data.common_show_goods_category_level.only_tag}}" data-validation-message="{{$data.common_show_goods_category_level.error_tips}}" {{if isset($data['common_show_goods_category_level']['value']) and $data['common_show_goods_category_level']['value'] eq $v['value']}}checked{{/if}} data-am-ucheck required>{{$v.name}}
-                            </label>
-                        {{/foreach}}
-                    </div>
-                    <div class="level-type-content am-margin-top">
-                        {{foreach $common_show_goods_category_level_list as $v}}
-                            <div class="item {{if isset($data['common_show_goods_category_level']['value']) and $data['common_show_goods_category_level']['value'] eq $v['value']}}am-active{{/if}}" data-key="{{$v.value}}">
-                                <div class="am-flex am-flex-warp">
-                                    <div class="am-flex am-flex-col am-gap-1">
-                                        <img class="am-radius-lg" src="{{:StaticAttachmentUrl('site/siteset/website/web_level_'.$v['value'].'.png')}}" />
-                                        <p>{{:MyLang('web_title')}}</p>
-                                    </div>
-                                    <div class="am-flex am-flex-col am-gap-1">
-                                        <img class="am-radius-lg" src="{{:StaticAttachmentUrl('site/siteset/website/app_level_'.$v['value'].'.png')}}" />
-                                        <p>{{:MyLang('app_title')}}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        {{/foreach}}
-                    </div>
-                    {{if is_array(MyLang('site.goods_tips_list'))}}
-                        <div class="am-tips-card">
-                            <p>{{:implode('</p><p>', MyLang('site.goods_tips_list'))}}</p>
-                        </div>
-                    {{/if}}
                 </div>
             </div>
             <div class="am-form-popup-submit">

@@ -763,8 +763,22 @@
                 {{if $base['actual_price'] gt 0 and $common_order_is_booking neq 1}}
                     <div id="buy-items-payment" class="buy-items">
                         <h3>{{:MyLang('buy.buy_item_payment_title')}}</h3>
+                        <!-- 订单确认页面支付方式顶部钩子-开始 -->
+                        {{if isset($shopxo_is_develop) and $shopxo_is_develop eq true}}
+                            <div class="plugins-tag">
+                                <span>plugins_view_buy_payment_top</span>
+                            </div>
+                        {{/if}}
+                        {{if !empty($plugins_view_buy_payment_top_data) and is_array($plugins_view_buy_payment_top_data)}}
+                            {{foreach $plugins_view_buy_payment_top_data as $hook}}
+                                {{if is_string($hook) or is_int($hook)}}
+                                    {{$hook|raw}}
+                                {{/if}}
+                            {{/foreach}}
+                        {{/if}}
+                        <!-- 订单确认页面支付方式顶部钩子-结束 -->
                         {{if !empty($payment_list)}}
-                            <div class="business-list business-list-nbfc payment am-margin-top-sm" data-field="payment_id">
+                            <div class="business-list business-list-nbfc payment friendpay-self-payment-panel am-margin-top-sm" data-field="payment_id">
                                 <ul class="am-avg-sm-2 am-avg-md-3 am-avg-lg-4 payment-list" data-is-required="1">
                                     {{foreach $payment_list as $payment}}
                                         <li data-value="{{$payment.id}}" class="am-padding-sm am-padding-left-main am-padding-right-main am-text-center {{if isset($params['payment_id']) and $params['payment_id'] eq $payment['id']}}selected{{/if}}">

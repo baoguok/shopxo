@@ -42,7 +42,7 @@ class PluginsDataConfigService
         // 是否已读取配置数据
         if(!array_key_exists($plugins, self::$data_config))
         {
-            self::$data_config[$plugins] = self::ConfigData($plugins);
+            self::$data_config[$plugins] = self::DataConfigData($plugins);
         }
 
         // 返回配置数据值

@@ -361,12 +361,15 @@ class AttachmentService
         }
 
         // 附件路径权限验证
-        $path = substr(ROOT_PATH, 0, -1);
         foreach($data as $k=>$v)
         {
-            if(!empty($v['url']) && file_exists($path.$v['url']))
+            if(empty($v['url']))
             {
-                if(!is_writable($path.$v['url']))
+                continue;
+            }
+            foreach(self::AttachmentLocalPathList($v['url']) as $file)
+            {
+                if(file_exists($file) && !is_writable($file))
                 {
                     return DataReturn(MyLang('common_service.attachment.delete_no_power_tips').'('.($k+1).')', -1);
                 }
@@ -376,11 +379,15 @@ class AttachmentService
         // 删除文件
         foreach($data as $v)
         {
-            if(!empty($v['url']) && file_exists($path.$v['url']))
+            if(empty($v['url']))
             {
-                if(is_writable($path.$v['url']))
+                continue;
+            }
+            foreach(self::AttachmentLocalPathList($v['url']) as $file)
+            {
+                if(file_exists($file) && is_writable($file))
                 {
-                    \base\FileUtil::UnlinkFile($path.$v['url']);
+                    \base\FileUtil::UnlinkFile($file);
                 }
             }
         }
@@ -621,6 +628,42 @@ class AttachmentService
             }
         }
         return $files;
+    }
+
+    /**
+     * 附件地址解析本地文件路径列表
+     * @author  Devil
+     * @blog    http://gong.gg/
+     * @version 1.0.0
+     * @date    2026-06-15
+     * @desc    根据附件url解析可能对应的本地绝对路径（相对路径、远程url中/static/upload/片段等）
+     * @param   [string]          $url [附件地址]
+     */
+    public static function AttachmentLocalPathList($url)
+    {
+        $result = [];
+        if(empty($url))
+        {
+            return $result;
+        }
+
+        $base = substr(ROOT_PATH, 0, -1);
+        $url = str_replace('\\', '/', $url);
+
+        // 原始相对地址
+        if(stripos($url, 'http') !== 0)
+        {
+            $result[] = $base.(substr($url, 0, 1) === '/' ? $url : '/'.$url);
+        }
+
+        // 截取 /static/upload/ 及后面部分（兼容远程地址）
+        $pos = stripos($url, '/static/upload/');
+        if($pos !== false)
+        {
+            $result[] = $base.substr($url, $pos);
+        }
+
+        return array_values(array_unique($result));
     }
 }
 ?>
