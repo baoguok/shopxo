@@ -889,7 +889,7 @@ class BuyService
             'order_status'  => $order_status,
             'order_ids'     => $order_ids,
             'payment_id'    => $payment_id,
-            'jump_url'      => MyUrl('index/order/index'),
+            'jump_url'      => (APPLICATION_CLIENT_TYPE == 'pc') ? MyUrl('index/order/index') : '',
         ];
 
 
@@ -904,7 +904,7 @@ class BuyService
             // 提交成功,进入合并支付
             case 1 :
                 $msg = MyLang('submit_success');
-                $data['jump_url'] = MyUrl('index/order/pay', ['ids'=>implode(',', $order_ids)]);
+                $data['jump_url'] = (APPLICATION_CLIENT_TYPE == 'pc') ? MyUrl('index/order/pay', ['ids'=>implode(',', $order_ids)]) : '';
                 break;
 
             // 默认操作成功
