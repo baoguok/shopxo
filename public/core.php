@@ -133,12 +133,15 @@ define('ROOT', substr(ROOT_PATH, 0, -7));
 define('APP_PATH', ROOT.'app'.DS);
 
 // 系统类型 [default] 默认default、可根据终端区分系统类型
-$system_type = (empty($_REQUEST['system_type']) || !is_string($_REQUEST['system_type'])) ? 'default' : trim($_REQUEST['system_type']);
-if($system_type === '' || preg_match('/^[a-zA-Z0-9_-]+$/', $system_type) !== 1)
+if(!defined('SYSTEM_TYPE'))
 {
-    $system_type = 'default';
+    $system_type = (empty($_REQUEST['system_type']) || !is_string($_REQUEST['system_type'])) ? 'default' : trim($_REQUEST['system_type']);
+    if($system_type === '' || preg_match('/^[a-zA-Z0-9_-]+$/', $system_type) !== 1)
+    {
+        $system_type = 'default';
+    }
+    define('SYSTEM_TYPE', $system_type);
 }
-define('SYSTEM_TYPE', $system_type);
 
 // 请求应用 [web, app] 默认web(ios|android|小程序 均为app)
 define('APPLICATION', empty($_REQUEST['application']) ? 'web' : trim(htmlspecialchars($_REQUEST['application'])));
